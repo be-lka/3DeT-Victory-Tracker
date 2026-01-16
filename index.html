@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Status Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>RPG Status Tracker</h1>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <button id="combat-toggle" onclick="toggleCombatMode()" class="combat-button" title="Modo Combate">
+                    ⚔️ Combate!
+                </button>
+                <button id="passar-turno-btn" onclick="passarTurno()" class="passar-turno-button" style="display: none;" title="Passar Turno">
+                    ⏭️ Passar Turno!
+                </button>
+                <button onclick="showAddCharacterModal()" class="add-button" title="Adicionar Personagem">
+                    ➕ Adicionar
+                </button>
+                <button onclick="exportToJSON()" class="export-button" title="Exportar JSON">
+                    💾 Exportar
+                </button>
+                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+                    <span class="theme-icon">🌙</span>
+                </button>
+            </div>
+        </header>
+        <div id="characters-container" class="characters-container">
+            <!-- Characters will be dynamically loaded here -->
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
