@@ -1,235 +1,254 @@
 # 3DeT Victory Tracker
 
-A comprehensive web-based tool for tracking character status, managing combat turns, and visualizing battlefield positions in tabletop RPG sessions. Built with vanilla HTML, CSS, and JavaScript.
+Uma ferramenta simples e prática para gerenciar personagens, combates e posicionamento no campo de batalha durante suas sessões de RPG de mesa do sistema 3DeT Victory.
 
-![RPG Status Tracker](https://img.shields.io/badge/Status-Active-success)
-![License](https://img.shields.io/badge/License-MIT-blue)
+---
 
-## Features
+## 📥 Como Baixar e Usar
 
-### 🎭 Character Management
-- **Create and manage multiple characters** with customizable stats
-- **Character types**: Player characters, enemies, friendly NPCs, and neutral NPCs
-- **Visual distinction**: Color-coded cards for different character types
-- **Avatar support**: Upload or link character images
-- **Hidden values mode**: Option to hide stats from players
+### Passo 1: Baixar o Programa
 
-### ⚔️ Combat Mode
-- **Initiative-based turn order**: Sort characters by initiative values
-- **Turn tracking**: Visual glow effect highlights the current character's turn
-- **Smooth animations**: Animated transitions when passing turns
-- **Combat UI**: Dedicated combat controls and turn order display
+1. No GitHub, clique no botão verde **"Code"** no topo da página
+2. Clique em **"Download ZIP"**
+3. Extraia o arquivo ZIP em uma pasta no seu computador
+4. Abra a pasta extraída
 
-### 🗺️ Battlefield Tracker
-- **5 distance zones**: Organize characters across different range bands
-- **Drag-and-drop positioning**: Move characters between distance zones during combat
-- **Visual character representation**: Character avatars displayed as dots on the battlefield
-- **Turn synchronization**: Active character's dot glows and pulses on the battlefield
-- **Color-coded dots**:
-  - 🔴 Red: Enemies
-  - 🟢 Green: Friendly NPCs
-  - 🔵 Blue: Player characters
+### Passo 2: Abrir o Programa
 
-### 📊 Status Tracking
-- **Health Points (Pontos de Vida)**: Based on Resistance × 5
-- **Mana Points (Pontos de Mana)**: Based on Ability × 5
-- **Action Points (Pontos de Ação)**: Based on Power
-- **Visual status bars**: Animated progress bars with percentage indicators
-- **Quick modifications**: Double-click bars to add/subtract values (+10, -5 format)
-- **Visual feedback**: Animated effects for healing, damage, mana changes
+1. Encontre o arquivo chamado **`index.html`**
+2. Dê um duplo clique nele (ou clique com o botão direito e escolha "Abrir com" seu navegador)
+3. O programa abrirá no seu navegador (Chrome, Firefox, Edge, etc.)
 
-### 🎨 User Interface
-- **Dark/Light theme**: Toggle between themes with persistent preference
-- **Dracula-inspired color scheme**: Beautiful, eye-friendly color palette
-- **Responsive design**: Works on desktop and tablet devices
-- **Smooth animations**: Polished transitions and visual effects
-- **Accessibility**: ARIA labels and keyboard navigation support
+**Pronto!** Não precisa instalar nada, não precisa de internet depois de baixar. É só abrir e usar!
 
-### 💾 Data Management
-- **LocalStorage persistence**: All data saved automatically in browser
-- **JSON import/export**: Load from `characters.json` or export current state
-- **Data merging**: Combines JSON file data with localStorage current values
+---
 
-## Getting Started
+## 🎮 Como Usar
 
-### Installation
+### Adicionar Personagens
 
-1. Clone or download this repository
-2. Open `index.html` in a modern web browser
-3. No build process or dependencies required!
+1. Clique no botão **➕ Adicionar**
+2. Preencha:
+   - Nome do personagem
+   - Foto (cole um link de imagem ou deixe em branco)
+   - Tipo: Jogador, Inimigo, Aliado ou Neutro
+   - Estatísticas: Poder, Habilidade e Resistência
+3. Clique em **Adicionar**
 
-### Basic Usage
+### Alterar Vida, Mana ou Ação
 
-#### Adding Characters
-1. Click the **➕ Adicionar** button
-2. Fill in character details:
-   - Name
-   - Avatar (URL or upload)
-   - Character type (Player/Enemy/Friendly/Neutral)
-   - Stats: Power, Ability, Resistance
-   - Optional: Hide values checkbox
-3. Click **Adicionar**
+1. **Dê dois cliques** na barra que você quer mudar (Vida, Mana ou Ação)
+2. Digite: **`+10`** para aumentar ou **`-5`** para diminuir
+3. Pressione Enter ou clique em **Aplicar**
 
-#### Modifying Status Values
-- **Double-click** any status bar (Health/Mana/Action)
-- Enter a value in format: `+10` (add) or `-5` (subtract)
-- Click **Aplicar** or press Enter
+### Mudar Foto do Personagem
 
-#### Changing Avatar
-- **Double-click** a character's avatar image
-- Enter a URL or upload an image file
-- Click **Aplicar**
+- **Dê dois cliques** na foto do personagem
+- Cole um link de imagem ou faça upload de uma imagem
+- Clique em **Aplicar**
 
-#### Combat Mode
-1. Click **⚔️ Combate!** to activate combat mode
-2. Enter initiative values for each character
-3. Characters automatically sort by initiative (highest first)
-4. Use **⏭️ Passar Turno!** to advance to the next character's turn
-5. The **Battlefield Tracker** panel slides in from the right
+### Modo Combate
 
-#### Battlefield Positioning
-1. Activate Combat Mode to see the battlefield panel
-2. **Drag and drop** character dots between distance zones (Faixa 1-5)
-3. Characters can only be moved **during their turn**
-4. The active character's dot pulses with a glowing animation
+1. Clique no botão **⚔️ Combate!** para ativar o modo de combate
+2. Digite a **Iniciativa** de cada personagem (quanto maior, mais rápido age)
+3. Os personagens aparecem ordenados por iniciativa (maior primeiro)
+4. Use **⏭️ Passar Turno!** para avançar para o próximo personagem
+5. O painel do **Campo de Batalha** aparece do lado direito
 
-#### Exporting Data
-- Click **💾 Exportar** to download current character data as `characters.json`
+### Campo de Batalha
 
-## Character Data Format
+- **Arraste** os pontos dos personagens entre as 5 faixas de distância
+- Cada faixa representa uma distância diferente no combate
+- Só é possível mover personagens **durante o turno deles**
+- O personagem da vez fica **piscando** com uma luz colorida
 
-Characters are stored with the following structure:
+### Salvar seus Dados
 
-```json
-{
-  "id": 1,
-  "name": "Character Name",
-  "avatar": "https://example.com/avatar.jpg",
-  "type": "player",
-  "hiddenValues": false,
-  "poder": 10,
-  "habilidade": 8,
-  "resistencia": 12,
-  "pontosVida": 60,
-  "pontosMana": 40,
-  "pontosAcao": 10,
-  "iniciativa": 15,
-  "battlefieldSection": 2
-}
-```
+- Clique em **💾 Exportar** para baixar um arquivo com todos os seus personagens
+- Guarde esse arquivo em segurança para não perder seus dados!
 
-### Field Descriptions
-- `id`: Unique identifier
-- `name`: Character name
-- `avatar`: Image URL or data URL
-- `type`: `"player"`, `"enemy"`, `"friendly"`, or `"neutral"`
-- `hiddenValues`: Boolean to hide stat values
-- `poder`: Power stat (affects Action Points)
-- `habilidade`: Ability stat (affects Mana Points)
-- `resistencia`: Resistance stat (affects Health Points)
-- `pontosVida`: Current health (max = resistencia × 5)
-- `pontosMana`: Current mana (max = habilidade × 5)
-- `pontosAcao`: Current action points (max = poder)
-- `iniciativa`: Initiative value for combat order
-- `battlefieldSection`: Distance zone (0-4, representing Faixa 1-5)
+### Tema Escuro/Claro
 
-## File Structure
+- Clique no botão da lua/sol no canto superior direito
+- Sua preferência é salva automaticamente
 
-```
-3DeT-Victory-Tracker/
-├── index.html          # Main HTML structure
-├── styles.css          # All styling and animations
-├── script.js           # Application logic and functionality
-├── characters.json     # Character data (optional, loads on startup)
-├── notes.md            # Campaign notes
-└── README.md           # This file
-```
+---
 
-## Technical Details
+## 🎯 O que o Programa Faz
 
-### Technologies Used
-- **HTML5**: Semantic markup
-- **CSS3**: Modern styling with CSS variables, animations, and transitions
-- **Vanilla JavaScript**: No frameworks or dependencies
-- **LocalStorage API**: Client-side data persistence
-- **Drag and Drop API**: HTML5 drag-and-drop for battlefield positioning
+### Gerenciamento de Personagens
+- Crie e organize todos os personagens da sua mesa
+- Diferentes tipos: Jogadores (azul), Inimigos (vermelho), Aliados (verde)
+- Acompanhe Vida, Mana e Pontos de Ação de cada um
 
-### Browser Compatibility
-- Chrome/Edge (latest)
-- Firefox (latest)
-- Safari (latest)
-- Mobile browsers (with some limitations)
+### Sistema de Combate
+- Organize os turnos por iniciativa
+- Veja claramente quem é a vez de agir (fica brilhando)
+- Animações suaves ao passar os turnos
 
-### Performance
-- Lightweight: No external dependencies
-- Fast: Pure vanilla JavaScript
-- Efficient: LocalStorage for instant data access
-- Smooth: CSS animations with hardware acceleration
+### Campo de Batalha Visual
+- 5 faixas de distância para organizar o combate
+- Arraste personagens entre as faixas
+- Veja a foto de cada personagem no campo de batalha
+- O personagem da vez fica piscando para chamar atenção
 
-## Features in Detail
+### Barras de Status
+- Barras coloridas mostram quanto cada personagem tem de Vida, Mana e Ação
+- Animações quando você cura ou causa dano
+- Cálculo automático dos valores máximos baseado nas estatísticas
 
-### Status Bar Animations
-- **Healing**: Green swipe animation (left to right)
-- **Damage**: Red swipe animation (right to left)
-- **Mana Spent**: Black swipe animation (right to left)
-- **Mana Recovered**: Blue swipe animation (left to right)
+---
 
-### Visual Indicators
-- **Current Turn**: Pulsing black glow with animated border
-- **Near Death**: Red pulsing animation when health ≤ resistance
-- **Battlefield Active Turn**: Pulsing glow with expanding ring animation
+## 💡 Dicas Úteis
 
-### Character Type Colors
-- **Enemy**: Red gradient background and border
-- **Friendly**: Green gradient background and border
-- **Neutral**: Blue gradient background with slight grayscale
-- **Player**: Standard background (default)
+- **Cura rápida**: Dê dois cliques na barra de vida e digite `+20` para curar 20 pontos
+- **Dano rápido**: Digite `-15` para causar 15 pontos de dano
+- **Organize o combate**: Use as 5 faixas para saber quem está perto ou longe
+- **Salve sempre**: Exporte seus dados regularmente para não perder nada
+- **Tema escuro**: Use o tema escuro para sessões noturnas mais confortáveis
 
-## Keyboard Shortcuts
+---
 
-- **Enter**: Confirm modal inputs
-- **Escape**: Close modals (when clicking outside)
+## ⚠️ Importante
 
-## Tips & Tricks
+- Seus dados ficam salvos no navegador (não precisa de internet depois de baixar)
+- Se limpar os dados do navegador, você pode perder seus personagens
+- Por isso, **exporte regularmente** seus dados usando o botão Exportar
+- Funciona melhor no computador ou tablet (celular tem algumas limitações)
 
-1. **Quick Health Management**: Double-click health bar and use `+20` or `-15` for quick adjustments
-2. **Initiative Setup**: Enter initiative values before clicking "Passar Turno" for proper sorting
-3. **Battlefield Organization**: Use the 5 distance zones to track positioning relative to enemies
-4. **Theme Switching**: Toggle dark/light mode anytime - preference is saved
-5. **Data Backup**: Regularly export your JSON file to preserve character data
+---
 
-## Known Limitations
+## 🎲 Sobre o 3DeT Victory
 
-- Character data is stored in browser localStorage (clears if browser data is cleared)
-- No server-side persistence (single-user application)
-- Drag-and-drop may have limitations on touch devices
-- Avatar images must be accessible URLs or data URLs
+Este tracker foi feito especialmente para o sistema brasileiro de RPG **3DeT Victory**. Ele ajuda mestres e jogadores a gerenciar combates e status dos personagens de forma simples e visual.
 
-## Future Enhancements
+---
 
-Potential features for future versions:
-- [ ] Multi-session support
-- [ ] Character templates/presets
-- [ ] Dice roller integration
-- [ ] Status effect tracking
-- [ ] Initiative history log
-- [ ] Character notes/descriptions
-- [ ] Import from other formats
-- [ ] Mobile app version
+---
 
-## Contributing
+# 3DeT Victory Tracker
 
-This is a personal project, but suggestions and improvements are welcome!
+A simple and practical tool to manage characters, combat, and battlefield positioning during your 3DeT Victory tabletop RPG sessions.
 
-## License
+---
 
-This project is open source and available under the MIT License.
+## 📥 How to Download and Use
 
-## Credits
+### Step 1: Download the Program
 
-- Built for tabletop RPG sessions
-- Dracula color scheme inspiration
-- Designed with accessibility in mind
+1. On GitHub, click the green **"Code"** button at the top of the page
+2. Click **"Download ZIP"**
+3. Extract the ZIP file to a folder on your computer
+4. Open the extracted folder
+
+### Step 2: Open the Program
+
+1. Find the file named **`index.html`**
+2. Double-click it (or right-click and choose "Open with" your browser)
+3. The program will open in your browser (Chrome, Firefox, Edge, etc.)
+
+**That's it!** No installation needed, no internet required after downloading. Just open and use!
+
+---
+
+## 🎮 How to Use
+
+### Adding Characters
+
+1. Click the **➕ Adicionar** (Add) button
+2. Fill in:
+   - Character name
+   - Photo (paste an image link or leave blank)
+   - Type: Player, Enemy, Ally, or Neutral
+   - Stats: Power, Ability, and Resistance
+3. Click **Adicionar** (Add)
+
+### Change Health, Mana, or Action Points
+
+1. **Double-click** the bar you want to change (Health, Mana, or Action)
+2. Type: **`+10`** to increase or **`-5`** to decrease
+3. Press Enter or click **Aplicar** (Apply)
+
+### Change Character Photo
+
+- **Double-click** the character's photo
+- Paste an image link or upload an image
+- Click **Aplicar** (Apply)
+
+### Combat Mode
+
+1. Click the **⚔️ Combate!** (Combat!) button to activate combat mode
+2. Enter each character's **Initiative** (higher = acts faster)
+3. Characters appear sorted by initiative (highest first)
+4. Use **⏭️ Passar Turno!** (Next Turn!) to advance to the next character
+5. The **Battlefield** panel appears on the right side
+
+### Battlefield
+
+- **Drag** character dots between the 5 distance zones
+- Each zone represents a different combat distance
+- Characters can only be moved **during their turn**
+- The active character **pulses** with a colored glow
+
+### Save Your Data
+
+- Click **💾 Exportar** (Export) to download a file with all your characters
+- Keep this file safe so you don't lose your data!
+
+### Dark/Light Theme
+
+- Click the moon/sun button in the top right corner
+- Your preference is saved automatically
+
+---
+
+## 🎯 What the Program Does
+
+### Character Management
+- Create and organize all characters at your table
+- Different types: Players (blue), Enemies (red), Allies (green)
+- Track Health, Mana, and Action Points for each
+
+### Combat System
+- Organize turns by initiative
+- See clearly whose turn it is (they glow)
+- Smooth animations when passing turns
+
+### Visual Battlefield
+- 5 distance zones to organize combat
+- Drag characters between zones
+- See each character's photo on the battlefield
+- The active character pulses to draw attention
+
+### Status Bars
+- Colored bars show each character's Health, Mana, and Action
+- Animations when you heal or deal damage
+- Automatic calculation of maximum values based on stats
+
+---
+
+## 💡 Useful Tips
+
+- **Quick healing**: Double-click the health bar and type `+20` to heal 20 points
+- **Quick damage**: Type `-15` to deal 15 points of damage
+- **Organize combat**: Use the 5 zones to know who's close or far
+- **Save often**: Export your data regularly so you don't lose anything
+- **Dark theme**: Use dark theme for more comfortable nighttime sessions
+
+---
+
+## ⚠️ Important
+
+- Your data is saved in the browser (no internet needed after downloading)
+- If you clear browser data, you might lose your characters
+- That's why you should **export regularly** using the Export button
+- Works best on computer or tablet (mobile has some limitations)
+
+---
+
+## 🎲 About 3DeT Victory
+
+This tracker was made especially for the Brazilian RPG system **3DeT Victory**. It helps GMs and players manage combat and character status in a simple and visual way.
 
 ---
 
