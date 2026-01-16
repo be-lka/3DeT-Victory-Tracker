@@ -22,6 +22,8 @@ function updateThemeIcon(theme) {
 // Character Data Management
 let characters = [];
 let combatMode = false;
+const battlefieldSections = 5;
+const defaultBattlefieldSection = 2;
 
 // Load characters from JSON file
 async function loadCharacters() {
@@ -50,6 +52,7 @@ async function loadCharacters() {
             }
         }
         characters = jsonData;
+        ensureBattlefieldPositions();
         saveCharacters(); // Sync to localStorage
         renderCharacters();
     } catch (error) {
@@ -90,6 +93,7 @@ function loadFromLocalStorage() {
     if (saved) {
         try {
             characters = JSON.parse(saved);
+            ensureBattlefieldPositions();
             renderCharacters();
         } catch (error) {
             console.error('Error loading from localStorage:', error);
@@ -120,6 +124,7 @@ function renderCharacters() {
     
     // Update combat mode UI
     updateCombatModeUI();
+    renderBattlefield(sortedCharacters);
 }
 
 // Create a character card element
@@ -262,6 +267,108 @@ function createCharacterCard(character, isCurrentTurn = false) {
     });
     
     return card;
+}
+
+function ensureBattlefieldPositions() {
+    characters.forEach((character) => {
+        if (typeof character.battlefieldSection !== 'number' || Number.isNaN(character.battlefieldSection)) {
+            character.battlefieldSection = defaultBattlefieldSection;
+        }
+    });
+}
+
+function renderBattlefield(sortedCharacters) {
+    const panel = document.getElementById('battlefield-panel');
+    if (!panel) return;
+
+    ensureBattlefieldPositions();
+
+    const sections = panel.querySelectorAll('.battlefield-section');
+    sections.forEach((section) => {
+        const dotsContainer = section.querySelector('.battlefield-dots');
+        if (dotsContainer) {
+            dotsContainer.innerHTML = '';
+        }
+    });
+
+    const orderedCharacters = sortedCharacters && sortedCharacters.length ? sortedCharacters : [...characters];
+    const currentTurnId = combatMode && orderedCharacters.length ? orderedCharacters[0].id : null;
+
+    orderedCharacters.forEach((character) => {
+        const sectionIndex = Math.min(
+            battlefieldSections - 1,
+            Math.max(0, character.battlefieldSection ?? defaultBattlefieldSection)
+        );
+        const section = panel.querySelector(`.battlefield-section[data-section-index="${sectionIndex}"]`);
+        if (!section) return;
+
+        const dotsContainer = section.querySelector('.battlefield-dots');
+        if (!dotsContainer) return;
+
+        const dot = document.createElement('div');
+        const characterType = character.type || 'player';
+        let dotClass = 'battlefield-dot';
+        if (characterType === 'enemy') {
+            dotClass += ' dot-enemy';
+        } else if (characterType === 'friendly') {
+            dotClass += ' dot-friendly';
+        } else {
+            dotClass += ' dot-player';
+        }
+
+        if (currentTurnId === character.id) {
+            dotClass += ' current-turn';
+        }
+
+        dot.className = dotClass;
+        dot.setAttribute('draggable', 'true');
+        dot.dataset.characterId = character.id;
+        dot.title = character.name;
+
+        // Add character avatar image inside the dot
+        const avatarImg = document.createElement('img');
+        avatarImg.src = character.avatar || 'https://via.placeholder.com/120';
+        avatarImg.alt = character.name;
+        avatarImg.onerror = function() {
+            this.src = 'https://via.placeholder.com/120';
+        };
+        dot.appendChild(avatarImg);
+
+        dot.addEventListener('dragstart', (event) => {
+            event.dataTransfer.setData('text/plain', character.id.toString());
+        });
+
+        dotsContainer.appendChild(dot);
+    });
+}
+
+function setupBattlefieldDragAndDrop() {
+    const sections = document.querySelectorAll('.battlefield-section');
+    sections.forEach((section) => {
+        section.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            section.classList.add('is-drop-target');
+        });
+
+        section.addEventListener('dragleave', () => {
+            section.classList.remove('is-drop-target');
+        });
+
+        section.addEventListener('drop', (event) => {
+            event.preventDefault();
+            section.classList.remove('is-drop-target');
+            const characterId = parseInt(event.dataTransfer.getData('text/plain'), 10);
+            if (!characterId) return;
+
+            const sectionIndex = parseInt(section.dataset.sectionIndex, 10);
+            const character = characters.find((c) => c.id === characterId);
+            if (!character || Number.isNaN(sectionIndex)) return;
+
+            character.battlefieldSection = sectionIndex;
+            saveCharacters();
+            renderCharacters();
+        });
+    });
 }
 
 // Modal Management
@@ -584,6 +691,7 @@ function addCharacter() {
         avatar: avatar || 'https://via.placeholder.com/120',
         type: type,
         hiddenValues: hiddenValues,
+        battlefieldSection: defaultBattlefieldSection,
         poder: poder,
         habilidade: habilidade,
         resistencia: resistencia,
@@ -622,13 +730,20 @@ function toggleCombatMode() {
 function updateCombatModeUI() {
     const combatBtn = document.getElementById('combat-toggle');
     const passarTurnoBtn = document.getElementById('passar-turno-btn');
+    const battlefieldPanel = document.getElementById('battlefield-panel');
     
     if (combatMode) {
         combatBtn.classList.add('active');
         passarTurnoBtn.style.display = 'block';
+        if (battlefieldPanel) {
+            battlefieldPanel.classList.add('active');
+        }
     } else {
         combatBtn.classList.remove('active');
         passarTurnoBtn.style.display = 'none';
+        if (battlefieldPanel) {
+            battlefieldPanel.classList.remove('active');
+        }
     }
 }
 
@@ -712,4 +827,5 @@ window.passarTurno = passarTurno;
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadCharacters();
+    setupBattlefieldDragAndDrop();
 });
