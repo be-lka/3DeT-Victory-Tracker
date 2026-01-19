@@ -22,6 +22,7 @@ function updateThemeIcon(theme) {
 // Character Data Management
 let characters = [];
 let combatMode = false;
+let preparationPhase = false;
 const battlefieldSections = 5;
 const defaultBattlefieldSection = 2;
 
@@ -108,7 +109,15 @@ function renderCharacters() {
 
     // Sort by initiative if in combat mode (highest first)
     let sortedCharacters = [...characters];
-    if (combatMode) {
+    if (combatMode && !preparationPhase) {
+        // Use turnOrder for active combat, initiative for preparation phase
+        sortedCharacters.sort((a, b) => {
+            const initA = a.turnOrder !== undefined ? a.turnOrder : (a.iniciativa || 0);
+            const initB = b.turnOrder !== undefined ? b.turnOrder : (b.iniciativa || 0);
+            return initB - initA; // Highest first
+        });
+    } else if (combatMode && preparationPhase) {
+        // During preparation, sort by initiative (if set)
         sortedCharacters.sort((a, b) => {
             const initA = a.iniciativa || 0;
             const initB = b.iniciativa || 0;
@@ -117,7 +126,7 @@ function renderCharacters() {
     }
 
     sortedCharacters.forEach((character, index) => {
-        const isCurrentTurn = combatMode && index === 0; // First card is current turn
+        const isCurrentTurn = combatMode && !preparationPhase && index === 0; // First card is current turn (only in active combat)
         const card = createCharacterCard(character, isCurrentTurn);
         container.appendChild(card);
     });
@@ -136,10 +145,25 @@ function createCharacterCard(character, isCurrentTurn = false) {
     const maxMana = character.habilidade * 5;
     const maxAcao = character.poder;
     
-    // Ensure current values don't exceed max
-    character.pontosVida = Math.min(character.pontosVida || maxVida, maxVida);
-    character.pontosMana = Math.min(character.pontosMana || maxMana, maxMana);
-    character.pontosAcao = Math.min(character.pontosAcao || maxAcao, maxAcao);
+    // Ensure current values don't exceed max (but allow 0 values)
+    // Use explicit checks to only default if value is null or undefined (not 0)
+    if (character.pontosVida === undefined || character.pontosVida === null) {
+        character.pontosVida = maxVida;
+    } else {
+        character.pontosVida = Math.max(0, Math.min(character.pontosVida, maxVida));
+    }
+    
+    if (character.pontosMana === undefined || character.pontosMana === null) {
+        character.pontosMana = maxMana;
+    } else {
+        character.pontosMana = Math.max(0, Math.min(character.pontosMana, maxMana));
+    }
+    
+    if (character.pontosAcao === undefined || character.pontosAcao === null) {
+        character.pontosAcao = maxAcao;
+    } else {
+        character.pontosAcao = Math.max(0, Math.min(character.pontosAcao, maxAcao));
+    }
     
     // Check if character is "Perto da Morte" (pontosVida <= resistencia)
     const isPertoDaMorte = character.pontosVida <= character.resistencia;
@@ -239,7 +263,8 @@ function createCharacterCard(character, isCurrentTurn = false) {
                    value="${character.iniciativa || ''}" 
                    data-character-id="${character.id}"
                    onchange="updateInitiative(${character.id}, this.value)"
-                   placeholder="0">
+                   placeholder="0"
+                   ${preparationPhase ? '' : 'readonly'}>
         </div>
         ` : ''}
         <div class="character-stats">
@@ -281,6 +306,18 @@ function renderBattlefield(sortedCharacters) {
     const panel = document.getElementById('battlefield-panel');
     if (!panel) return;
 
+    // Update header text based on phase
+    const header = panel.querySelector('.battlefield-header p');
+    if (header) {
+        if (preparationPhase) {
+            header.textContent = 'Arraste os pontos para posicionar os personagens antes do combate.';
+        } else if (combatMode) {
+            header.textContent = 'Arraste os pontos para mudar a distância durante o combate.';
+        } else {
+            header.textContent = 'Arraste os pontos para mudar a distância.';
+        }
+    }
+
     ensureBattlefieldPositions();
 
     const sections = panel.querySelectorAll('.battlefield-section');
@@ -292,7 +329,7 @@ function renderBattlefield(sortedCharacters) {
     });
 
     const orderedCharacters = sortedCharacters && sortedCharacters.length ? sortedCharacters : [...characters];
-    const currentTurnId = combatMode && orderedCharacters.length ? orderedCharacters[0].id : null;
+    const currentTurnId = combatMode && !preparationPhase && orderedCharacters.length ? orderedCharacters[0].id : null;
 
     orderedCharacters.forEach((character) => {
         const sectionIndex = Math.min(
@@ -389,8 +426,8 @@ function showInputModal(characterId, type) {
     overlay.innerHTML = `
         <div class="modal">
             <div class="modal-title">Modificar ${typeNames[type]}</div>
-            <div class="modal-hint">Digite +número para adicionar ou -número para subtrair (ex: +10, -5)</div>
-            <input type="text" class="modal-input" id="value-input" placeholder="+10 ou -5" autofocus>
+            <div class="modal-hint">Digite +número para adicionar, -número para subtrair, ou apenas um número para definir o valor absoluto (ex: +10, -5, 50)</div>
+            <input type="text" class="modal-input" id="value-input" placeholder="+10, -5 ou 50" autofocus>
             <div class="modal-buttons">
                 <button class="modal-button" onclick="closeModal()">Cancelar</button>
                 <button class="modal-button primary" onclick="applyValue(${characterId}, '${type}')">Aplicar</button>
@@ -428,15 +465,14 @@ function applyValue(characterId, type) {
     const input = document.getElementById('value-input');
     const valueStr = input.value.trim();
     
-    // Validate input format
-    const match = valueStr.match(/^([+-])(\d+)$/);
-    if (!match) {
-        alert('Formato inválido! Use +número ou -número (ex: +10, -5)');
+    // Validate input format - accepts +x, -x, or just x (absolute value)
+    const relativeMatch = valueStr.match(/^([+-])(\d+)$/);
+    const absoluteMatch = valueStr.match(/^(\d+)$/);
+    
+    if (!relativeMatch && !absoluteMatch) {
+        alert('Formato inválido! Use +número para adicionar, -número para subtrair, ou apenas um número para definir o valor absoluto (ex: +10, -5, 50)');
         return;
     }
-    
-    const operator = match[1];
-    const value = parseInt(match[2]);
     
     const character = characters.find(c => c.id === characterId);
     if (!character) return;
@@ -453,21 +489,38 @@ function applyValue(characterId, type) {
     const maxMultiplier = type === 'vida' ? 5 : (type === 'mana' ? 5 : 1);
     const maxValue = character[maxProperty] * maxMultiplier;
     
-    // Store old value to detect healing
+    // Store old value to detect healing/damage
     const oldValue = character[property];
+    let operator = null;
     
     // Apply operation
-    if (operator === '+') {
-        character[property] = Math.min(character[property] + value, maxValue);
-    } else {
-        character[property] = Math.max(character[property] - value, 0);
+    if (relativeMatch) {
+        // Relative operation: +x or -x
+        operator = relativeMatch[1];
+        const value = parseInt(relativeMatch[2]);
+        
+        if (operator === '+') {
+            character[property] = Math.min(character[property] + value, maxValue);
+        } else {
+            character[property] = Math.max(character[property] - value, 0);
+        }
+    } else if (absoluteMatch) {
+        // Absolute value: just x
+        const value = parseInt(absoluteMatch[1]);
+        character[property] = Math.max(0, Math.min(value, maxValue));
+        // Determine operator based on value change for animation purposes
+        if (character[property] > oldValue) {
+            operator = '+';
+        } else if (character[property] < oldValue) {
+            operator = '-';
+        }
     }
     
-    // Check for different animation tris
-    const wasHealed = type === 'vida' && operator === '+' && character[property] > oldValue;
-    const healthLost = type === 'vida' && operator === '-' && character[property] < oldValue;
-    const manaSpent = type === 'mana' && operator === '-' && character[property] < oldValue;
-    const manaRecovered = type === 'mana' && operator === '+' && character[property] > oldValue;
+    // Check for different animation types
+    const wasHealed = type === 'vida' && character[property] > oldValue;
+    const healthLost = type === 'vida' && character[property] < oldValue;
+    const manaSpent = type === 'mana' && character[property] < oldValue;
+    const manaRecovered = type === 'mana' && character[property] > oldValue;
     
     // Save and re-render
     saveCharacters();
@@ -722,59 +775,123 @@ function exportToJSON() {
 
 // Combat Mode Functions
 function toggleCombatMode() {
-    combatMode = !combatMode;
+    if (combatMode && !preparationPhase) {
+        // If in active combat, exit combat mode
+        combatMode = false;
+        preparationPhase = false;
+        // Clean up turn order (but keep original iniciativa)
+        characters.forEach(char => {
+            delete char.turnOrder;
+        });
+    } else if (combatMode && preparationPhase) {
+        // If in preparation phase, exit to normal mode
+        combatMode = false;
+        preparationPhase = false;
+        // Clean up turn order
+        characters.forEach(char => {
+            delete char.turnOrder;
+            delete char.iniciativaOriginal;
+        });
+    } else {
+        // Enter preparation phase
+        combatMode = true;
+        preparationPhase = true;
+    }
+    saveCharacters();
+    updateCombatModeUI();
+    renderCharacters();
+}
+
+function startCombat() {
+    // End preparation phase and start actual combat
+    preparationPhase = false;
+    
+    // Preserve original initiative values and initialize turn order
+    characters.forEach(character => {
+        if (character.iniciativaOriginal === undefined) {
+            character.iniciativaOriginal = character.iniciativa || 0;
+        }
+        // Initialize turn order with current initiative for sorting
+        character.turnOrder = character.iniciativa || 0;
+    });
+    
+    saveCharacters();
     updateCombatModeUI();
     renderCharacters();
 }
 
 function updateCombatModeUI() {
     const combatBtn = document.getElementById('combat-toggle');
+    const lutarBtn = document.getElementById('lutar-btn');
     const passarTurnoBtn = document.getElementById('passar-turno-btn');
     const battlefieldPanel = document.getElementById('battlefield-panel');
     
-    if (combatMode) {
+    if (combatMode && preparationPhase) {
+        // Preparation phase
         combatBtn.classList.add('active');
+        if (lutarBtn) lutarBtn.style.display = 'block';
+        passarTurnoBtn.style.display = 'none';
+        if (battlefieldPanel) {
+            battlefieldPanel.classList.add('active');
+        }
+        document.body.classList.add('battlefield-active');
+    } else if (combatMode && !preparationPhase) {
+        // Active combat
+        combatBtn.classList.add('active');
+        if (lutarBtn) lutarBtn.style.display = 'none';
         passarTurnoBtn.style.display = 'block';
         if (battlefieldPanel) {
             battlefieldPanel.classList.add('active');
         }
+        document.body.classList.add('battlefield-active');
     } else {
+        // Normal mode
         combatBtn.classList.remove('active');
+        if (lutarBtn) lutarBtn.style.display = 'none';
         passarTurnoBtn.style.display = 'none';
         if (battlefieldPanel) {
             battlefieldPanel.classList.remove('active');
         }
+        document.body.classList.remove('battlefield-active');
     }
 }
 
 function updateInitiative(characterId, value) {
     const character = characters.find(c => c.id === characterId);
     if (character) {
-        character.iniciativa = parseInt(value) || 0;
+        const newInitiative = parseInt(value) || 0;
+        character.iniciativa = newInitiative;
+        
+        // If in active combat, also update turnOrder
+        if (combatMode && !preparationPhase) {
+            character.turnOrder = newInitiative;
+        }
+        
         saveCharacters();
         renderCharacters();
     }
 }
 
 function passarTurno() {
-    if (!combatMode) return;
+    if (!combatMode || preparationPhase) return;
     
-    // Sort characters by initiative
+    // Sort characters by turn order
     const sortedCharacters = [...characters].sort((a, b) => {
-        const initA = a.iniciativa || 0;
-        const initB = b.iniciativa || 0;
+        const initA = a.turnOrder !== undefined ? a.turnOrder : (a.iniciativa || 0);
+        const initB = b.turnOrder !== undefined ? b.turnOrder : (b.iniciativa || 0);
         return initB - initA;
     });
     
     if (sortedCharacters.length === 0) return;
     
-    // Get the top character (highest initiative)
+    // Get the top character (highest turn order)
     const topCharacter = sortedCharacters[0];
     
-    // Move top character to bottom by setting its initiative to lowest - 1
-    const initiatives = sortedCharacters.map(c => c.iniciativa || 0);
-    const minInitiative = Math.min(...initiatives);
-    topCharacter.iniciativa = minInitiative - 1;
+    // Move top character to bottom by setting its turnOrder to lowest - 1
+    // Preserve original iniciativa value
+    const turnOrders = sortedCharacters.map(c => c.turnOrder !== undefined ? c.turnOrder : (c.iniciativa || 0));
+    const minTurnOrder = Math.min(...turnOrders);
+    topCharacter.turnOrder = minTurnOrder - 1;
     
     // Save first
     saveCharacters();
@@ -821,6 +938,7 @@ window.showAvatarModal = showAvatarModal;
 window.updateAvatar = updateAvatar;
 window.removeAvatar = removeAvatar;
 window.toggleCombatMode = toggleCombatMode;
+window.startCombat = startCombat;
 window.updateInitiative = updateInitiative;
 window.passarTurno = passarTurno;
 
