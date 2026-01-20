@@ -300,10 +300,21 @@ body.battlefield-active .container {
 header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 30px;
     padding-bottom: 20px;
     border-bottom: 2px solid var(--border-color);
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+header > div {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    flex: 1;
+    justify-content: flex-end;
 }
 
 h1 {
@@ -357,6 +368,31 @@ h1 {
 .export-button:hover {
     background: var(--green);
     border-color: var(--green);
+    color: var(--bg-primary);
+    transform: translateY(-2px);
+}
+
+.dice-button {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: 'Microgramma', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.3s ease;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.dice-button:hover {
+    background: var(--yellow);
+    border-color: var(--yellow);
     color: var(--bg-primary);
     transform: translateY(-2px);
 }
@@ -1341,6 +1377,300 @@ input[type="checkbox"] {
     color: var(--text-secondary);
     margin-bottom: 10px;
     font-style: italic;
+}
+
+/* Dice Modal Styles */
+.dice-modal {
+    max-width: 420px;
+    padding: 15px 20px;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.dice-modal .modal-title {
+    font-size: 1.1em;
+    margin-bottom: 12px;
+}
+
+.dice-modal .form-group {
+    margin-bottom: 12px;
+}
+
+.dice-modal .form-group label {
+    font-size: 0.85em;
+    margin-bottom: 4px;
+}
+
+.dice-modal .modal-input {
+    padding: 8px 10px;
+    font-size: 0.95em;
+    margin-bottom: 0;
+}
+
+.dice-modal .form-row {
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.dice-modal .modal-buttons {
+    margin-top: 15px;
+    margin-bottom: 0;
+}
+
+.dice-modal .modal-button {
+    padding: 8px 16px;
+    font-size: 0.9em;
+}
+
+.dice-modal .modal-hint {
+    display: none;
+}
+
+.dice-results {
+    padding: 15px;
+    background: var(--bg-primary);
+    border-radius: 8px;
+    border: 2px solid var(--border-color);
+    margin-top: 10px;
+}
+
+.dice-roll-summary {
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.dice-roll-title {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 10px;
+    font-family: 'Microgramma', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.dice-roll-title strong {
+    font-size: 1.3em;
+    color: var(--yellow);
+}
+
+.dice-roll-breakdown {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin-top: 8px;
+}
+
+.dice-display {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 15px 0;
+}
+
+.dice {
+    width: 50px;
+    height: 50px;
+    border-radius: 6px;
+    border: 2px solid var(--border-color);
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8em;
+    font-weight: 700;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px var(--shadow);
+}
+
+.dice-critical {
+    border-color: var(--yellow);
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(241, 250, 140, 0.2) 100%);
+    color: var(--yellow);
+    animation: dice-critical-pulse 1.5s ease-in-out infinite;
+}
+
+.dice-critical-animate {
+    animation: dice-critical-glow 2s ease-in-out infinite;
+}
+
+@keyframes dice-critical-pulse {
+    0%, 100% {
+        box-shadow: 0 2px 4px var(--shadow), 0 0 0 0 rgba(241, 250, 140, 0.4);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 2px 4px var(--shadow), 0 0 0 8px rgba(241, 250, 140, 0);
+        transform: scale(1.05);
+    }
+}
+
+@keyframes dice-critical-glow {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(241, 250, 140, 0.6), 
+                    0 0 20px rgba(241, 250, 140, 0.4),
+                    0 0 30px rgba(241, 250, 140, 0.2);
+        border-color: var(--yellow);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(241, 250, 140, 0.8), 
+                    0 0 40px rgba(241, 250, 140, 0.6),
+                    0 0 60px rgba(241, 250, 140, 0.4);
+        border-color: var(--yellow);
+        transform: scale(1.1);
+    }
+}
+
+.dice-critical-message {
+    text-align: center;
+    font-size: 1.2em;
+    font-weight: 600;
+    color: var(--yellow);
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(241, 250, 140, 0.1);
+    border-radius: 6px;
+    border: 2px solid var(--yellow);
+    animation: dice-critical-message-pulse 2s ease-in-out infinite;
+}
+
+.dice-failure {
+    border-color: var(--red);
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(255, 85, 85, 0.2) 100%);
+    color: var(--red);
+    animation: dice-failure-pulse 1.5s ease-in-out infinite;
+}
+
+.dice-failure-animate {
+    animation: dice-failure-glow 2s ease-in-out infinite;
+}
+
+@keyframes dice-failure-pulse {
+    0%, 100% {
+        box-shadow: 0 2px 4px var(--shadow), 0 0 0 0 rgba(255, 85, 85, 0.4);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 2px 4px var(--shadow), 0 0 0 8px rgba(255, 85, 85, 0);
+        transform: scale(1.05);
+    }
+}
+
+@keyframes dice-failure-glow {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(255, 85, 85, 0.6), 
+                    0 0 20px rgba(255, 85, 85, 0.4),
+                    0 0 30px rgba(255, 85, 85, 0.2);
+        border-color: var(--red);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(255, 85, 85, 0.8), 
+                    0 0 40px rgba(255, 85, 85, 0.6),
+                    0 0 60px rgba(255, 85, 85, 0.4);
+        border-color: var(--red);
+        transform: scale(1.1);
+    }
+}
+
+.dice-failure-message {
+    text-align: center;
+    font-size: 1.2em;
+    font-weight: 600;
+    color: var(--red);
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(255, 85, 85, 0.1);
+    border-radius: 6px;
+    border: 2px solid var(--red);
+    animation: dice-failure-message-pulse 2s ease-in-out infinite;
+}
+
+.dice-result-status {
+    text-align: center;
+    font-size: 1.3em;
+    font-weight: 700;
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 6px;
+    font-family: 'Microgramma', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.dice-result-success {
+    color: var(--green);
+    background: rgba(80, 250, 123, 0.1);
+    border: 2px solid var(--green);
+}
+
+.dice-result-perfect-success {
+    color: var(--yellow);
+    background: rgba(241, 250, 140, 0.1);
+    border: 2px solid var(--yellow);
+    animation: dice-perfect-success-pulse 2s ease-in-out infinite;
+}
+
+.dice-result-failure {
+    color: var(--red);
+    background: rgba(255, 85, 85, 0.1);
+    border: 2px solid var(--red);
+}
+
+.dice-result-critical-failure {
+    color: var(--red);
+    background: rgba(255, 85, 85, 0.2);
+    border: 3px solid var(--red);
+    animation: dice-critical-failure-pulse 1.5s ease-in-out infinite;
+}
+
+.dice-meta-info {
+    text-align: center;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    font-style: italic;
+}
+
+@keyframes dice-critical-message-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.9;
+        transform: scale(1.02);
+    }
+}
+
+@keyframes dice-failure-message-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.9;
+        transform: scale(1.02);
+    }
+}
+
+@keyframes dice-perfect-success-pulse {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(241, 250, 140, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(241, 250, 140, 0.6);
+    }
+}
+
+@keyframes dice-critical-failure-pulse {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(255, 85, 85, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(255, 85, 85, 0.6);
+    }
 }
 
 /* Responsive */

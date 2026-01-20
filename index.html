@@ -11,7 +11,7 @@
     <div class="container">
         <header>
             <h1>Victory Tracker</h1>
-            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <div>
                 <button id="combat-toggle" onclick="toggleCombatMode()" class="combat-button" title="Modo Combate">
                     ⚔️ Combate!
                 </button>
@@ -20,6 +20,9 @@
                 </button>
                 <button onclick="exportToJSON()" class="export-button" title="Exportar JSON">
                     💾 Exportar
+                </button>
+                <button onclick="showDiceModal()" class="dice-button" title="Rolar Dados">
+                    🎲 Rolar Dados
                 </button>
                 <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
                     <span class="theme-icon">🌙</span>

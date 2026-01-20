@@ -935,6 +935,283 @@ function passarTurno() {
     }
 }
 
+// Dice Rolling System
+function showDiceModal() {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay active';
+    
+    // Build character options
+    let characterOptions = '<option value="">Nenhum (rolar sem personagem)</option>';
+    characters.forEach(char => {
+        characterOptions += `<option value="${char.id}">${char.name} (P:${char.poder} H:${char.habilidade} R:${char.resistencia})</option>`;
+    });
+    
+    overlay.innerHTML = `
+        <div class="modal dice-modal">
+            <div class="modal-title">🎲 Rolar Dados</div>
+            <div class="form-group">
+                <label>Personagem</label>
+                <select class="modal-input" id="dice-character" onchange="updateDiceCharacterStats()">
+                    ${characterOptions}
+                </select>
+            </div>
+            <div class="form-row">
+                <div id="dice-attribute-group" class="form-group" style="display: none; flex: 1;">
+                    <label>Atributo</label>
+                    <select class="modal-input" id="dice-attribute" onchange="updateDiceAttributeValue()">
+                        <option value="poder">Poder</option>
+                        <option value="habilidade">Habilidade</option>
+                        <option value="resistencia">Resistência</option>
+                    </select>
+                </div>
+                <div id="dice-manual-attribute-group" class="form-group" style="display: none; flex: 1;">
+                    <label>Atributo</label>
+                    <select class="modal-input" id="dice-manual-attribute">
+                        <option value="poder">Poder</option>
+                        <option value="habilidade">Habilidade</option>
+                        <option value="resistencia">Resistência</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Valor Atributo</label>
+                    <input type="number" class="modal-input" id="dice-attribute-value" placeholder="Ex: 10" min="0" value="0" readonly>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex: 1;">
+                    <label>Qnt. Dados</label>
+                    <select class="modal-input" id="dice-count">
+                        <option value="1">1 dado</option>
+                        <option value="2">2 dados</option>
+                        <option value="3" selected>3 dados</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Modificador</label>
+                    <input type="number" class="modal-input" id="dice-modifier" placeholder="Ex: +2 ou -1" value="0">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Meta</label>
+                    <input type="number" class="modal-input" id="dice-meta" placeholder="Ex: 15" min="1" value="">
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-button" onclick="closeModal()">Cancelar</button>
+                <button class="modal-button primary" onclick="rollDice()">Rolar!</button>
+            </div>
+            <div id="dice-result-container" style="display: none; margin-top: 15px;">
+                <div id="dice-result"></div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // Initialize the form state (no character selected by default)
+    updateDiceCharacterStats();
+    
+    // Focus first input
+    const characterInput = overlay.querySelector('#dice-character');
+    characterInput.focus();
+    
+    // Add event listener for manual attribute change
+    const manualAttributeSelect = overlay.querySelector('#dice-manual-attribute');
+    if (manualAttributeSelect) {
+        manualAttributeSelect.addEventListener('change', () => {
+            // Just update display, value stays as user entered
+        });
+    }
+    
+    // Close on overlay click
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeModal();
+        }
+    });
+}
+
+function updateDiceCharacterStats() {
+    const characterId = document.getElementById('dice-character').value;
+    const attributeGroup = document.getElementById('dice-attribute-group');
+    const manualAttributeGroup = document.getElementById('dice-manual-attribute-group');
+    const attributeValueInput = document.getElementById('dice-attribute-value');
+    
+    if (!characterId) {
+        // No character selected - show manual attribute selection
+        attributeGroup.style.display = 'none';
+        manualAttributeGroup.style.display = 'block';
+        attributeValueInput.value = '0';
+        attributeValueInput.readOnly = false;
+        attributeValueInput.placeholder = 'Ex: 10';
+        return;
+    }
+    
+    // Character selected - show character attribute selection
+    attributeGroup.style.display = 'block';
+    manualAttributeGroup.style.display = 'none';
+    attributeValueInput.readOnly = true;
+    
+    // Update attribute value based on selected character and attribute
+    updateDiceAttributeValue();
+}
+
+function updateDiceAttributeValue() {
+    const characterId = document.getElementById('dice-character').value;
+    const attributeValueInput = document.getElementById('dice-attribute-value');
+    
+    if (!characterId) {
+        // Manual mode - value is entered by user
+        return;
+    }
+    
+    const character = characters.find(c => c.id === parseInt(characterId));
+    if (!character) return;
+    
+    const attributeSelect = document.getElementById('dice-attribute');
+    const selectedAttribute = attributeSelect.value;
+    
+    let value = 0;
+    if (selectedAttribute === 'poder') {
+        value = character.poder || 0;
+    } else if (selectedAttribute === 'habilidade') {
+        value = character.habilidade || 0;
+    } else if (selectedAttribute === 'resistencia') {
+        value = character.resistencia || 0;
+    }
+    
+    attributeValueInput.value = value;
+}
+
+function rollDice() {
+    const diceCount = parseInt(document.getElementById('dice-count').value) || 3;
+    const attributeValue = parseInt(document.getElementById('dice-attribute-value').value) || 0;
+    const modifier = parseInt(document.getElementById('dice-modifier').value) || 0;
+    const meta = parseInt(document.getElementById('dice-meta').value) || 0;
+    
+    // Get attribute name
+    const characterId = document.getElementById('dice-character').value;
+    let attributeName = '';
+    if (characterId) {
+        const attributeSelect = document.getElementById('dice-attribute');
+        const selectedAttribute = attributeSelect.value;
+        const attributeNames = {
+            poder: 'Poder',
+            habilidade: 'Habilidade',
+            resistencia: 'Resistência'
+        };
+        attributeName = attributeNames[selectedAttribute] || 'Atributo';
+    } else {
+        const manualAttributeSelect = document.getElementById('dice-manual-attribute');
+        const selectedAttribute = manualAttributeSelect.value;
+        const attributeNames = {
+            poder: 'Poder',
+            habilidade: 'Habilidade',
+            resistencia: 'Resistência'
+        };
+        attributeName = attributeNames[selectedAttribute] || 'Atributo';
+    }
+    
+    // Check if attribute value is provided
+    if (attributeValue <= 0) {
+        alert('Por favor, selecione um personagem e atributo ou insira um valor válido para o atributo.');
+        return;
+    }
+    
+    // Calculate final attribute value (base + modifier)
+    const finalAttributeValue = attributeValue + modifier;
+    
+    if (finalAttributeValue <= 0) {
+        alert('O valor final do atributo (atributo + modificador) deve ser maior que zero.');
+        return;
+    }
+    
+    // Roll dice
+    const diceResults = [];
+    for (let i = 0; i < diceCount; i++) {
+        diceResults.push(Math.floor(Math.random() * 6) + 1);
+    }
+    
+    // Calculate base result (sum of dice + attribute value)
+    const diceSum = diceResults.reduce((sum, val) => sum + val, 0);
+    const baseResult = diceSum + finalAttributeValue;
+    
+    // Count critical successes (6s) - each 6 adds the attribute value again
+    const criticalCount = diceResults.filter(val => val === 6).length;
+    const criticalBonus = criticalCount * finalAttributeValue;
+    
+    // Final result
+    const finalResult = baseResult + criticalBonus;
+    
+    // Check for critical failure (all dice = 1)
+    const isCriticalFailure = diceResults.length > 0 && diceResults.every(val => val === 1);
+    
+    // Determine success status
+    let successStatus = '';
+    let successClass = '';
+    if (meta > 0) {
+        if (isCriticalFailure) {
+            successStatus = 'FALHA CRÍTICA';
+            successClass = 'dice-result-critical-failure';
+        } else if (finalResult >= meta * 2) {
+            successStatus = 'SUCESSO PERFEITO';
+            successClass = 'dice-result-perfect-success';
+        } else if (finalResult >= meta) {
+            successStatus = 'SUCESSO';
+            successClass = 'dice-result-success';
+        } else {
+            successStatus = 'FALHA';
+            successClass = 'dice-result-failure';
+        }
+    }
+    
+    // Display results
+    const resultContainer = document.getElementById('dice-result-container');
+    const resultDiv = document.getElementById('dice-result');
+    
+    let diceHTML = '<div class="dice-results">';
+    diceHTML += `<div class="dice-roll-summary">`;
+    diceHTML += `<div class="dice-roll-title">Resultado: <strong>${finalResult}</strong></div>`;
+    
+    if (meta > 0) {
+        diceHTML += `<div class="dice-result-status ${successClass}">${successStatus}</div>`;
+    }
+    
+    diceHTML += `</div>`;
+    diceHTML += `<div class="dice-display">`;
+    
+    diceResults.forEach((result, index) => {
+        const isCritical = result === 6;
+        const isFailure = result === 1 && isCriticalFailure;
+        let diceClass = 'dice';
+        if (isCritical) diceClass += ' dice-critical';
+        if (isFailure) diceClass += ' dice-failure';
+        diceHTML += `<div class="${diceClass}" data-dice-value="${result}">${result}</div>`;
+    });
+    
+    diceHTML += `</div>`;
+    
+    if (isCriticalFailure) {
+        diceHTML += `<div class="dice-failure-message">💀 Falha Crítica!</div>`;
+    }
+    
+    diceHTML += '</div>';
+    
+    resultDiv.innerHTML = diceHTML;
+    resultContainer.style.display = 'block';
+    
+    // Trigger animation for critical dice
+    setTimeout(() => {
+        const criticalDice = resultDiv.querySelectorAll('.dice-critical');
+        criticalDice.forEach(die => {
+            die.classList.add('dice-critical-animate');
+        });
+        const failureDice = resultDiv.querySelectorAll('.dice-failure');
+        failureDice.forEach(die => {
+            die.classList.add('dice-failure-animate');
+        });
+    }, 100);
+}
+
 // Make functions globally available for onclick handlers
 window.closeModal = closeModal;
 window.applyValue = applyValue;
@@ -949,6 +1226,10 @@ window.toggleCombatMode = toggleCombatMode;
 window.startCombat = startCombat;
 window.updateInitiative = updateInitiative;
 window.passarTurno = passarTurno;
+window.showDiceModal = showDiceModal;
+window.rollDice = rollDice;
+window.updateDiceCharacterStats = updateDiceCharacterStats;
+window.updateDiceAttributeValue = updateDiceAttributeValue;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
