@@ -2,8 +2,8 @@
 const themeToggle = document.getElementById('theme-toggle');
 const themeIcon = themeToggle.querySelector('.theme-icon');
 
-// Load theme from localStorage or default to light
-const currentTheme = localStorage.getItem('theme') || 'light';
+// Load theme from localStorage or default to dark
+const currentTheme = localStorage.getItem('theme') || 'dark';
 document.documentElement.setAttribute('data-theme', currentTheme);
 updateThemeIcon(currentTheme);
 
@@ -244,7 +244,7 @@ function createCharacterCard(character, isCurrentTurn = false) {
                     </div>
                     <div class="status-bar-container">
                         <div class="status-bar-label">
-                            <span>Pontos de Acao</span>
+                            <span>Pontos de Ação</span>
                             <span>${acaoDisplay}</span>
                         </div>
                         <div class="status-bar" data-character-id="${character.id}" data-type="acao" data-max="${maxAcao}">
@@ -416,7 +416,7 @@ function showInputModal(characterId, type) {
     const typeNames = {
         vida: 'Pontos de Vida',
         mana: 'Pontos de Mana',
-        acao: 'Pontos de Acao'
+        acao: 'Pontos de Ação'
     };
     
     // Create modal overlay
@@ -521,6 +521,8 @@ function applyValue(characterId, type) {
     const healthLost = type === 'vida' && character[property] < oldValue;
     const manaSpent = type === 'mana' && character[property] < oldValue;
     const manaRecovered = type === 'mana' && character[property] > oldValue;
+    const actionSpent = type === 'acao' && character[property] < oldValue;
+    const actionRecovered = type === 'acao' && character[property] > oldValue;
     
     // Save and re-render
     saveCharacters();
@@ -543,6 +545,12 @@ function applyValue(characterId, type) {
         } else if (manaRecovered) {
             bar.classList.add('mana-recovered');
             setTimeout(() => bar.classList.remove('mana-recovered'), 1000);
+        } else if (actionSpent) {
+            bar.classList.add('action-spent');
+            setTimeout(() => bar.classList.remove('action-spent'), 1000);
+        } else if (actionRecovered) {
+            bar.classList.add('action-recovered');
+            setTimeout(() => bar.classList.remove('action-recovered'), 1000);
         }
     }, 50); // Small delay to ensure DOM is ready
     

@@ -1,3 +1,12 @@
+/* Custom Font */
+@font-face {
+    font-family: 'Microgramma';
+    src: url('fonts/Microgramma D Extended Bold/Microgramma D Extended Bold.otf') format('opentype');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap; /* Better performance - shows fallback while loading */
+}
+
 /* Dracula Color Scheme */
 :root {
     /* Light Mode (Dracula-inspired but lighter) */
@@ -21,13 +30,13 @@
 }
 
 [data-theme="dark"] {
-    /* Dark Mode (Original Dracula) */
-    --bg-primary: #282a36;
-    --bg-secondary: #44475a;
+    /* Dark Mode (Pitch Black) */
+    --bg-primary: #000000;
+    --bg-secondary: #1a1a1a;
     --text-primary: #f8f8f2;
     --text-secondary: #6272a4;
     --border-color: #6272a4;
-    --accent: #bd93f9;
+    --accent: #FAA519;
     --red: #ff5555;
     --blue: #8be9fd;
     --yellow: #f1fa8c;
@@ -92,6 +101,9 @@ body.battlefield-active .container {
 
 .battlefield-header h2 {
     font-size: 1.2em;
+    font-family: 'Microgramma', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     color: var(--accent);
     margin-bottom: 6px;
 }
@@ -109,6 +121,9 @@ body.battlefield-active .container {
     padding: 18px 24px;
     font-size: 1.3em;
     font-weight: 700;
+    font-family: 'Microgramma', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     background: var(--red);
     border: 3px solid var(--red);
     color: var(--bg-primary);
@@ -295,6 +310,9 @@ h1 {
     font-size: 2.5em;
     color: var(--accent);
     font-weight: 700;
+    font-family: 'Microgramma', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
 }
 
 .theme-toggle {
@@ -326,6 +344,9 @@ h1 {
     cursor: pointer;
     font-size: 1em;
     font-weight: 500;
+    font-family: 'Microgramma', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     transition: all 0.3s ease;
     color: var(--text-primary);
     display: flex;
@@ -348,6 +369,9 @@ h1 {
     cursor: pointer;
     font-size: 1em;
     font-weight: 500;
+    font-family: 'Microgramma', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     transition: all 0.3s ease;
     color: var(--text-primary);
     display: flex;
@@ -370,6 +394,9 @@ h1 {
     cursor: pointer;
     font-size: 1em;
     font-weight: 500;
+    font-family: 'Microgramma', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     transition: all 0.3s ease;
     color: var(--text-primary);
     display: flex;
@@ -406,6 +433,9 @@ h1 {
     cursor: pointer;
     font-size: 1em;
     font-weight: 500;
+    font-family: 'Microgramma', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     transition: all 0.3s ease;
     color: var(--text-primary);
     display: flex;
@@ -422,26 +452,47 @@ h1 {
 }
 
 .passar-turno-button {
-    background: var(--bg-secondary);
-    border: 2px solid var(--border-color);
+    background: var(--cyan);
+    border: 3px solid var(--cyan);
     border-radius: 8px;
-    padding: 10px 20px;
+    padding: 15px 24px;
     cursor: pointer;
-    font-size: 1em;
-    font-weight: 500;
+    font-size: 1.2em;
+    font-weight: 700;
+    font-family: 'Microgramma', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     transition: all 0.3s ease;
-    color: var(--text-primary);
+    color: var(--bg-primary);
     display: flex;
     align-items: center;
-    gap: 5px;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    animation: passar-turno-pulse 2s ease-in-out infinite;
+    box-shadow: 0 4px 12px rgba(139, 233, 253, 0.4);
 }
 
 .passar-turno-button:hover {
     background: var(--cyan);
     border-color: var(--cyan);
     color: var(--bg-primary);
-    transform: translateY(-2px);
-    box-shadow: 0 0 10px rgba(139, 233, 253, 0.5);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(139, 233, 253, 0.6);
+    animation: none;
+}
+
+@keyframes passar-turno-pulse {
+    0%, 100% {
+        box-shadow: 0 4px 12px rgba(139, 233, 253, 0.4);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 6px 20px rgba(139, 233, 253, 0.7), 0 0 30px rgba(139, 233, 253, 0.3);
+        transform: scale(1.02);
+    }
 }
 
 .delete-character-btn {
@@ -543,8 +594,12 @@ h1 {
 /* Current Turn Glow */
 .character-card.current-turn {
     animation: current-turn-glow 2s ease-in-out infinite;
-    border-color: rgba(0, 0, 0, 0.6) !important;
-    box-shadow: 0 0 25px rgba(0, 0, 0, 0.5), 0 4px 6px var(--shadow) !important;
+    border-color: #FAA519 !important;
+    border-width: 3px !important;
+    box-shadow: 0 0 20px rgba(250, 165, 25, 0.6), 
+                0 0 40px rgba(250, 165, 25, 0.4), 
+                0 0 60px rgba(250, 165, 25, 0.2),
+                0 4px 6px var(--shadow) !important;
     position: relative;
     z-index: 10;
 }
@@ -552,15 +607,30 @@ h1 {
 .character-card.current-turn::before {
     content: '';
     position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border-radius: 12px;
-    background: linear-gradient(45deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.4));
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    border-radius: 14px;
+    border: 2px solid #FAA519;
+    opacity: 0.8;
+    animation: current-turn-halo 2s ease-in-out infinite;
+    pointer-events: none;
     z-index: -1;
-    opacity: 0.6;
-    animation: current-turn-border 2s ease-in-out infinite;
+}
+
+.character-card.current-turn::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    right: -8px;
+    bottom: -8px;
+    border-radius: 16px;
+    background: radial-gradient(ellipse at center, rgba(250, 165, 25, 0.3) 0%, transparent 70%);
+    animation: current-turn-glow-ring 2s ease-in-out infinite;
+    pointer-events: none;
+    z-index: -2;
 }
 
 /* Current turn takes precedence over perto da morte */
@@ -570,21 +640,43 @@ h1 {
 
 @keyframes current-turn-glow {
     0%, 100% {
-        box-shadow: 0 0 25px rgba(0, 0, 0, 0.5), 0 4px 6px var(--shadow);
-        border-color: rgba(0, 0, 0, 0.6);
+        box-shadow: 0 0 20px rgba(250, 165, 25, 0.6), 
+                    0 0 40px rgba(250, 165, 25, 0.4), 
+                    0 0 60px rgba(250, 165, 25, 0.2),
+                    0 4px 6px var(--shadow);
+        border-color: #FAA519;
     }
     50% {
-        box-shadow: 0 0 35px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 0, 0, 0.4), 0 4px 6px var(--shadow);
-        border-color: rgba(0, 0, 0, 0.7);
+        box-shadow: 0 0 30px rgba(250, 165, 25, 0.8), 
+                    0 0 60px rgba(250, 165, 25, 0.6), 
+                    0 0 90px rgba(250, 165, 25, 0.4),
+                    0 0 120px rgba(250, 165, 25, 0.2),
+                    0 4px 6px var(--shadow);
+        border-color: #FAA519;
     }
 }
 
-@keyframes current-turn-border {
+@keyframes current-turn-halo {
     0%, 100% {
         opacity: 0.6;
+        transform: scale(1);
+        box-shadow: 0 0 15px rgba(250, 165, 25, 0.5);
     }
     50% {
-        opacity: 0.9;
+        opacity: 1;
+        transform: scale(1.05);
+        box-shadow: 0 0 25px rgba(250, 165, 25, 0.8), 0 0 50px rgba(250, 165, 25, 0.4);
+    }
+}
+
+@keyframes current-turn-glow-ring {
+    0%, 100% {
+        opacity: 0.3;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.6;
+        transform: scale(1.1);
     }
 }
 
@@ -686,7 +778,9 @@ h1 {
 .status-bar.healing,
 .status-bar.health-loss,
 .status-bar.mana-spent,
-.status-bar.mana-recovered {
+.status-bar.mana-recovered,
+.status-bar.action-spent,
+.status-bar.action-recovered {
     overflow: visible;
 }
 
@@ -921,6 +1015,98 @@ h1 {
     }
 }
 
+/* Action spent animation - dark yellow/amber swish right to left */
+.status-bar.action-spent::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(241, 250, 140, 0.4),
+        rgba(255, 184, 108, 0.8),
+        rgba(241, 250, 140, 0.4),
+        transparent
+    );
+    animation: action-spent-swipe 1s ease-out;
+    z-index: 3;
+    pointer-events: none;
+    border-radius: 6px;
+    box-shadow: 0 0 15px rgba(255, 184, 108, 0.6);
+}
+
+.status-bar.action-spent .status-bar-fill {
+    position: relative;
+    z-index: 2;
+}
+
+.status-bar.action-spent .status-bar-value {
+    z-index: 4;
+}
+
+@keyframes action-spent-swipe {
+    0% {
+        right: -100%;
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        right: 100%;
+        opacity: 0;
+    }
+}
+
+/* Action recovered animation - yellow swish left to right */
+.status-bar.action-recovered::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(241, 250, 140, 0.5),
+        rgba(241, 250, 140, 0.9),
+        rgba(241, 250, 140, 0.5),
+        transparent
+    );
+    animation: action-recovered-swipe 1s ease-out;
+    z-index: 3;
+    pointer-events: none;
+    border-radius: 6px;
+    box-shadow: 0 0 15px rgba(241, 250, 140, 0.6);
+}
+
+.status-bar.action-recovered .status-bar-fill {
+    position: relative;
+    z-index: 2;
+}
+
+.status-bar.action-recovered .status-bar-value {
+    z-index: 4;
+}
+
+@keyframes action-recovered-swipe {
+    0% {
+        left: -100%;
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        left: 100%;
+        opacity: 0;
+    }
+}
+
 .initiative-container {
     margin-top: 15px;
     padding-top: 15px;
@@ -1127,6 +1313,9 @@ input[type="checkbox"] {
     cursor: pointer;
     font-size: 1em;
     font-weight: 500;
+    font-family: 'Microgramma', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     transition: all 0.2s ease;
 }
 

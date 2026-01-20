@@ -15,9 +15,6 @@
                 <button id="combat-toggle" onclick="toggleCombatMode()" class="combat-button" title="Modo Combate">
                     ⚔️ Combate!
                 </button>
-                <button id="passar-turno-btn" onclick="passarTurno()" class="passar-turno-button" style="display: none;" title="Passar Turno">
-                    ⏭️ Passar Turno!
-                </button>
                 <button onclick="showAddCharacterModal()" class="add-button" title="Adicionar Personagem">
                     ➕ Adicionar
                 </button>
@@ -33,10 +30,13 @@
             <!-- Characters will be dynamically loaded here -->
         </div>
     </div>
-    <aside id="battlefield-panel" class="battlefield-panel" aria-label="Battlefield Tracker">
+    <aside id="battlefield-panel" class="battlefield-panel" aria-label="Campo de Batalha">
         <div class="battlefield-header">
-            <h2>Battlefield Tracker</h2>
+            <h2>Campo de Batalha</h2>
             <p>Arraste os pontos para mudar a distância.</p>
+            <button id="passar-turno-btn" onclick="passarTurno()" class="passar-turno-button" style="display: none;" title="Passar Turno">
+                ⏭️ Passar Turno!
+            </button>
             <button id="lutar-btn" onclick="startCombat()" class="lutar-button" style="display: none;" title="Iniciar Combate">
                 ⚔️ Lutar!!
             </button>
