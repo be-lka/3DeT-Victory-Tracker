@@ -6,7 +6,7 @@ Uma ferramenta simples e prática para gerenciar personagens, combates e posicio
 
 ---
 
-## 📥 Como Baixar e Usar
+## Usando
 
 ### Passo 1: Baixar o Programa
 
@@ -25,7 +25,7 @@ Uma ferramenta simples e prática para gerenciar personagens, combates e posicio
 
 ---
 
-## 🎮 Como Usar
+## Operando
 
 ### Adicionar Personagens
 
