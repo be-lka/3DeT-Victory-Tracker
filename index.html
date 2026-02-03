@@ -3,30 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎲 Victory Tracker</title>
+    <title>Victory Tracker</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>Victory Tracker</h1>
-            <div>
-                <button id="combat-toggle" onclick="toggleCombatMode()" class="combat-button" title="Modo Combate">
-                    ⚔️ Combate!
-                </button>
-                <button onclick="showAddCharacterModal()" class="add-button" title="Adicionar Personagem">
-                    ➕ Adicionar
-                </button>
-                <button onclick="exportToJSON()" class="export-button" title="Exportar JSON">
-                    💾 Exportar
-                </button>
-                <button onclick="showDiceModal()" class="dice-button" title="Rolar Dados">
-                    🎲 Rolar Dados
-                </button>
-                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
-                    <span class="theme-icon">🌙</span>
-                </button>
+        <header class="app-header">
+            <div class="title-block">
+                <h1 class="app-title">Victory Tracker</h1>
+            </div>
+            <div class="header-actions">
+                <div class="primary-actions">
+                    <button id="combat-toggle" onclick="toggleCombatMode()" class="combat-button" title="Modo Combate">
+                        ⚔️ Combate
+                    </button>
+                    <button onclick="showAddCharacterModal()" class="add-button" title="Adicionar Personagem">
+                        ➕ Adicionar
+                    </button>
+                    <button onclick="showDiceModal()" class="dice-button" title="Rolar Dados">
+                        🎲 Rolar Dados
+                    </button>
+                </div>
+                <div class="secondary-actions">
+                    <button id="more-toggle" class="more-button" aria-haspopup="true" aria-expanded="false" aria-controls="more-menu" title="Mais ações">
+                        Mais ▾
+                    </button>
+                    <div id="more-menu" class="more-menu" role="menu" aria-label="Mais ações">
+                        <button onclick="showImportModal()" class="menu-item" role="menuitem">Importar JSON</button>
+                        <button onclick="exportToJSON()" class="menu-item" role="menuitem">Exportar JSON</button>
+                        <button onclick="showRecoveryModal()" class="menu-item" role="menuitem">Recuperar Autosave</button>
+                        <button onclick="showHistoryModal()" class="menu-item" role="menuitem">Histórico de Recursos</button>
+                        <button id="theme-toggle" class="menu-item theme-toggle" aria-label="Toggle theme" role="menuitem">
+                            <span class="theme-icon">🌙</span>
+                            <span class="theme-label">Tema</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </header>
         <div id="characters-container" class="characters-container">
@@ -35,7 +48,10 @@
     </div>
     <aside id="battlefield-panel" class="battlefield-panel" aria-label="Campo de Batalha">
         <div class="battlefield-header">
-            <h2>Campo de Batalha</h2>
+            <div class="battlefield-title-row">
+                <h2>Campo de Batalha</h2>
+                <div id="round-indicator" class="round-indicator">Rodada: —</div>
+            </div>
             <p>Arraste os pontos para mudar a distância.</p>
             <button id="passar-turno-btn" onclick="passarTurno()" class="passar-turno-button" style="display: none;" title="Passar Turno">
                 ⏭️ Passar Turno!
