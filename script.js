@@ -98,41 +98,24 @@ function normalizeStatusList(statuses) {
 
 // Load characters from JSON file
 async function loadCharacters() {
+    if (loadFromLocalStorage()) {
+        return;
+    }
     try {
         const response = await fetch('characters.json');
         if (!response.ok) {
             throw new Error('Failed to load characters.json');
         }
         const jsonData = await response.json();
-        // Merge with localStorage data if it exists (localStorage takes precedence for current values)
-        const savedData = localStorage.getItem(STORAGE_KEYS.characters);
-        if (savedData) {
-            try {
-                const savedChars = JSON.parse(savedData);
-                // Update JSON data with saved current values
-                jsonData.forEach((char, index) => {
-                    const saved = savedChars.find(c => c.id === char.id);
-                    if (saved) {
-                        jsonData[index].pontosVida = saved.pontosVida;
-                        jsonData[index].pontosMana = saved.pontosMana;
-                        jsonData[index].pontosAcao = saved.pontosAcao;
-                        if (Array.isArray(saved.statuses)) {
-                            jsonData[index].statuses = normalizeStatusList(saved.statuses);
-                        }
-                    }
-                });
-            } catch (e) {
-                console.error('Error merging localStorage data:', e);
-            }
-        }
-        characters = jsonData;
+        characters = jsonData.map((char) => ({
+            ...char,
+            statuses: normalizeStatusList(char.statuses)
+        }));
         ensureBattlefieldPositions();
         saveCharacters(); // Sync to localStorage
         renderCharacters();
     } catch (error) {
         console.error('Error loading characters:', error);
-        // Try loading from localStorage
-        loadFromLocalStorage();
         if (characters.length === 0) {
             // Create default sample data if nothing exists
             characters = [
@@ -165,14 +148,20 @@ function saveCharacters() {
 // Load from localStorage on page load
 function loadFromLocalStorage() {
     const saved = localStorage.getItem(STORAGE_KEYS.characters);
-    if (saved) {
-        try {
-            characters = JSON.parse(saved);
-            ensureBattlefieldPositions();
-            renderCharacters();
-        } catch (error) {
-            console.error('Error loading from localStorage:', error);
-        }
+    if (!saved) return false;
+    try {
+        const parsed = JSON.parse(saved);
+        if (!Array.isArray(parsed)) return false;
+        characters = parsed.map((char) => ({
+            ...char,
+            statuses: normalizeStatusList(char.statuses)
+        }));
+        ensureBattlefieldPositions();
+        renderCharacters();
+        return true;
+    } catch (error) {
+        console.error('Error loading from localStorage:', error);
+        return false;
     }
 }
 
