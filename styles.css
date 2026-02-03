@@ -7,7 +7,6 @@
     font-display: swap; /* Better performance - shows fallback while loading */
 }
 
-/* Dracula Color Scheme */
 :root {
     --font-body: 'Inter', 'Atkinson Hyperlegible', 'Recursive', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     --font-display: 'Microgramma', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
