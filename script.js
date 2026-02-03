@@ -447,30 +447,27 @@ function createCharacterCard(character, isCurrentTurn = false) {
                 </div>
                 <div class="status-bars">
                     <div class="status-bar-container">
-                        <div class="status-bar-label">
+                    <div class="status-bar-label">
                             <span>Pontos de Vida</span>
-                            <span>${vidaDisplay}</span>
-                        </div>
+                    </div>
                         <div class="status-bar" data-character-id="${character.id}" data-type="vida" data-max="${maxVida}">
                             <div class="status-bar-fill health" style="width: ${vidaPercent}%"></div>
                             ${hiddenValues ? '' : `<span class="status-bar-value">${character.pontosVida} / ${maxVida}</span>`}
                         </div>
                     </div>
                     <div class="status-bar-container">
-                        <div class="status-bar-label">
+                    <div class="status-bar-label">
                             <span>Pontos de Mana</span>
-                            <span>${manaDisplay}</span>
-                        </div>
+                    </div>
                         <div class="status-bar" data-character-id="${character.id}" data-type="mana" data-max="${maxMana}">
                             <div class="status-bar-fill mana" style="width: ${manaPercent}%"></div>
                             ${hiddenValues ? '' : `<span class="status-bar-value">${character.pontosMana} / ${maxMana}</span>`}
                         </div>
                     </div>
                     <div class="status-bar-container">
-                        <div class="status-bar-label">
+                    <div class="status-bar-label">
                             <span>Pontos de Ação</span>
-                            <span>${acaoDisplay}</span>
-                        </div>
+                    </div>
                         <div class="status-bar" data-character-id="${character.id}" data-type="acao" data-max="${maxAcao}">
                             <div class="status-bar-fill action" style="width: ${acaoPercent}%"></div>
                             ${hiddenValues ? '' : `<span class="status-bar-value">${character.pontosAcao} / ${maxAcao}</span>`}
@@ -934,8 +931,9 @@ function showAddCharacterModal() {
                 <input type="text" class="modal-input" id="char-name" placeholder="Nome" autofocus>
             </div>
             <div class="form-group">
-                <label>URL do Avatar</label>
+                <label>Avatar (URL ou Upload)</label>
                 <input type="text" class="modal-input" id="char-avatar" placeholder="https://... ou deixe vazio para padrão">
+                <input type="file" class="modal-input" id="char-avatar-file" accept="image/png,image/jpeg,image/webp">
             </div>
             <div class="form-group">
                 <label>Tipo de Personagem</label>
@@ -955,15 +953,15 @@ function showAddCharacterModal() {
             <div class="form-row">
                 <div class="form-group">
                     <label>Poder</label>
-                    <input type="number" class="modal-input" id="char-poder" placeholder="10" min="1" value="10">
+                    <input type="number" class="modal-input" id="char-poder" placeholder="1" min="1" value="1">
                 </div>
                 <div class="form-group">
                     <label>Habilidade</label>
-                    <input type="number" class="modal-input" id="char-habilidade" placeholder="8" min="1" value="8">
+                    <input type="number" class="modal-input" id="char-habilidade" placeholder="1" min="1" value="1">
                 </div>
                 <div class="form-group">
                     <label>Resistência</label>
-                    <input type="number" class="modal-input" id="char-resistencia" placeholder="12" min="1" value="12">
+                    <input type="number" class="modal-input" id="char-resistencia" placeholder="1" min="1" value="1">
                 </div>
             </div>
             <div class="modal-buttons">
@@ -983,6 +981,18 @@ function showAddCharacterModal() {
             addCharacter();
         }
     });
+
+    const fileInput = overlay.querySelector('#char-avatar-file');
+    const urlInput = overlay.querySelector('#char-avatar');
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            urlInput.value = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
     
     // Close on overlay click
     overlay.addEventListener('click', (e) => {
@@ -998,9 +1008,9 @@ function addCharacter() {
     const avatar = document.getElementById('char-avatar').value.trim();
     const type = document.getElementById('char-type').value;
     const hiddenValues = document.getElementById('char-hidden-values').checked;
-    const poder = parseInt(document.getElementById('char-poder').value) || 10;
-    const habilidade = parseInt(document.getElementById('char-habilidade').value) || 8;
-    const resistencia = parseInt(document.getElementById('char-resistencia').value) || 12;
+    const poder = parseInt(document.getElementById('char-poder').value) || 1;
+    const habilidade = parseInt(document.getElementById('char-habilidade').value) || 1;
+    const resistencia = parseInt(document.getElementById('char-resistencia').value) || 1;
     
     if (!name) {
         alert('Por favor, insira um nome para o personagem.');
