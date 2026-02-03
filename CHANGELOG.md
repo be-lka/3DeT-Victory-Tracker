@@ -5,7 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2024-12-19
+## [1.1.0] - 2026-02-03
+
+### Added
+- **Import UX**
+  - Import modal with file/paste support, validation, preview, and replace/merge modes
+- **Autosave & Recovery**
+  - Automatic snapshot history and recovery modal
+- **Resource History**
+  - Log of PV/PM/PA changes with timestamps and deltas
+- **Combat Round Tracker**
+  - Round counter that advances after all turns are completed
+- **Status Effects**
+  - Status tags with delayed hover tooltips and a modal to edit effects
+- **Character Editing**
+  - Edit button on each card to update name, type, visibility, and stats
+- **Local Font Bundling**
+  - Inter, Atkinson Hyperlegible, and Recursive stored in `fonts/` with local `@font-face`
+
+### Changed
+- **Header Layout**
+  - Primary actions shown in the header; secondary actions moved into a “Mais” dropdown
+- **Typography**
+  - Microgramma limited to the title; Inter for character names/status, Recursive Linear for resources/initiative/stats
+  - Buttons now use Atkinson Hyperlegible with camel case labels
+- **Light Theme Palette**
+  - Updated to a clean, neutral base with a teal accent (less purple/pink bias)
+- **Status UI**
+  - “STATUS” is now a link; empty status list shows no placeholder text
+- **Tab Title**
+  - Removed duplicate dice emoji from the page title
+
+---
+
+## [1.0.0] - 2025-12-19
 
 ### Added
 - **Character Management System**
@@ -88,6 +121,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **1.1.0** - UI refactor, fonts bundled, autosave/recovery, round tracker, status effects, resource history, and character editing
 - **1.0.0** - Initial stable release
 
+[1.1.0]: https://github.com/yourusername/3DeT-Victory-Tracker/releases/tag/v1.1.0
 [1.0.0]: https://github.com/yourusername/3DeT-Victory-Tracker/releases/tag/v1.0.0
