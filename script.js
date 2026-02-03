@@ -39,6 +39,7 @@ const HISTORY_MAX_ENTRIES = 200;
 let resourceHistory = [];
 let roundNumber = 0;
 let turnsThisRound = 0;
+const DEFAULT_AVATAR = 'img/default_character.jpg';
 const STATUS_EFFECTS = [
     {
         key: 'desprevenido',
@@ -122,7 +123,7 @@ async function loadCharacters() {
                 {
                     id: 1,
                     name: "Personagem Exemplo",
-                    avatar: "https://via.placeholder.com/120",
+                    avatar: DEFAULT_AVATAR,
                     poder: 10,
                     habilidade: 8,
                     resistencia: 12,
@@ -428,11 +429,11 @@ function createCharacterCard(character, isCurrentTurn = false) {
     
     card.innerHTML = `
         <div class="character-header">
-            <img src="${character.avatar || 'https://via.placeholder.com/120'}" 
+            <img src="${character.avatar || DEFAULT_AVATAR}" 
                  alt="${character.name}" 
                  class="character-avatar"
                  data-character-id="${character.id}"
-                 onerror="this.src='https://via.placeholder.com/120'">
+                 onerror="this.src='img/default_character.jpg'">
             <div style="flex: 1;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div class="character-name">${character.name}</div>
@@ -618,10 +619,10 @@ function renderBattlefield(sortedCharacters) {
 
         // Add character avatar image inside the dot
         const avatarImg = document.createElement('img');
-        avatarImg.src = character.avatar || 'https://via.placeholder.com/120';
+        avatarImg.src = character.avatar || DEFAULT_AVATAR;
         avatarImg.alt = character.name;
         avatarImg.onerror = function() {
-            this.src = 'https://via.placeholder.com/120';
+            this.src = DEFAULT_AVATAR;
         };
         dot.appendChild(avatarImg);
 
@@ -899,7 +900,7 @@ function updateAvatar(characterId) {
     if (avatarValue) {
         character.avatar = avatarValue;
     } else {
-        character.avatar = 'https://via.placeholder.com/120';
+        character.avatar = DEFAULT_AVATAR;
     }
     
     saveCharacters();
@@ -912,7 +913,7 @@ function removeAvatar(characterId) {
     const character = characters.find(c => c.id === characterId);
     if (!character) return;
     
-    character.avatar = 'https://via.placeholder.com/80';
+    character.avatar = DEFAULT_AVATAR;
     saveCharacters();
     renderCharacters();
     closeModal();
@@ -1028,7 +1029,7 @@ function addCharacter() {
     const newCharacter = {
         id: newId,
         name: name,
-        avatar: avatar || 'https://via.placeholder.com/120',
+        avatar: avatar || DEFAULT_AVATAR,
         type: type,
         hiddenValues: hiddenValues,
         battlefieldSection: defaultBattlefieldSection,
@@ -1430,7 +1431,7 @@ function normalizeImportedCharacters(rawText) {
         }
 
         const type = ['player', 'enemy', 'friendly', 'neutral'].includes(item.type) ? item.type : 'player';
-        const avatar = typeof item.avatar === 'string' && item.avatar.trim() ? item.avatar.trim() : 'https://via.placeholder.com/120';
+        const avatar = typeof item.avatar === 'string' && item.avatar.trim() ? item.avatar.trim() : DEFAULT_AVATAR;
         const hiddenValues = Boolean(item.hiddenValues);
         const statuses = normalizeStatusList(item.statuses);
         let battlefieldSection = Number.isFinite(item.battlefieldSection) ? item.battlefieldSection : defaultBattlefieldSection;
