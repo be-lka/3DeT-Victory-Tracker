@@ -1,4 +1,4 @@
-# 3DeT Victory Tracker
+# Victory Tracker
 
 Uma ferramenta simples e prática para gerenciar personagens, combates e posicionamento no campo de batalha durante suas sessões de RPG de mesa do sistema 3DeT Victory.
 
