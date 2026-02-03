@@ -1,0 +1,231 @@
+@font-face {
+  font-family: 'Atkinson Hyperlegible';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(Atkinson_Hyperlegible/9Bt23C1KxNDXMspQ1lPyU89-1h6ONRlW45GE5Q.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Atkinson Hyperlegible';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(Atkinson_Hyperlegible/9Bt73C1KxNDXMspQ1lPyU89-1h6ONRlW45G8WbcNcw.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(Inter/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(Inter/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuGKYMZg.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(Inter/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbYrFMk1QuAIcyEwG_X-dpEfaE5YaERmK-CImKsvxvU-MXGX2fSqasNfUvz2xbXfn1uEQadDck018.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbYrFMk1QuAIcyEwG_X-dpEfaE5YaERmK-CImqvTxvU-MXGX2fSqasNfUvz2xbXfn1uEQadDck018.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbQr6Mk1QuAIcyEwG_X-dpEfaE5YaERmK-CImKsvxvU-MXGX2fSqasNfUvz2xbXfn1uEQadDck018.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbQr6Mk1QuAIcyEwG_X-dpEfaE5YaERmK-CImqvTxvU-MXGX2fSqasNfUvz2xbXfn1uEQadDck018.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbYrFMk1QuAIcyEwG_X-dpEfaE5YaERmK-CImKsvxvU-MXGX2fSqasNfUvz2xbXfn1uEQadCCk018.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbYrFMk1QuAIcyEwG_X-dpEfaE5YaERmK-CImqvTxvU-MXGX2fSqasNfUvz2xbXfn1uEQadCCk018.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbQr6Mk1QuAIcyEwG_X-dpEfaE5YaERmK-CImKsvxvU-MXGX2fSqasNfUvz2xbXfn1uEQadCCk018.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbQr6Mk1QuAIcyEwG_X-dpEfaE5YaERmK-CImqvTxvU-MXGX2fSqasNfUvz2xbXfn1uEQadCCk018.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbYrFMk1QuAIcyEwG_X-dpEfaE5YaERmK-CImKsvxvU-MXGX2fSqasNfUvz2xbXfn1uEQadCwk018.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbYrFMk1QuAIcyEwG_X-dpEfaE5YaERmK-CImqvTxvU-MXGX2fSqasNfUvz2xbXfn1uEQadCwk018.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbQr6Mk1QuAIcyEwG_X-dpEfaE5YaERmK-CImKsvxvU-MXGX2fSqasNfUvz2xbXfn1uEQadCwk018.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbQr6Mk1QuAIcyEwG_X-dpEfaE5YaERmK-CImqvTxvU-MXGX2fSqasNfUvz2xbXfn1uEQadCwk018.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbYrFMk1QuAIcyEwG_X-dpEfaE5YaERmK-CImKsvxvU-MXGX2fSqasNfUvz2xbXfn1uEQadBclE18.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbYrFMk1QuAIcyEwG_X-dpEfaE5YaERmK-CImqvTxvU-MXGX2fSqasNfUvz2xbXfn1uEQadBclE18.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbQr6Mk1QuAIcyEwG_X-dpEfaE5YaERmK-CImKsvxvU-MXGX2fSqasNfUvz2xbXfn1uEQadBclE18.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbQr6Mk1QuAIcyEwG_X-dpEfaE5YaERmK-CImqvTxvU-MXGX2fSqasNfUvz2xbXfn1uEQadBclE18.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbYrFMk1QuAIcyEwG_X-dpEfaE5YaERmK-CImKsvxvU-MXGX2fSqasNfUvz2xbXfn1uEQadBllE18.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbYrFMk1QuAIcyEwG_X-dpEfaE5YaERmK-CImqvTxvU-MXGX2fSqasNfUvz2xbXfn1uEQadBllE18.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbQr6Mk1QuAIcyEwG_X-dpEfaE5YaERmK-CImKsvxvU-MXGX2fSqasNfUvz2xbXfn1uEQadBllE18.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbQr6Mk1QuAIcyEwG_X-dpEfaE5YaERmK-CImqvTxvU-MXGX2fSqasNfUvz2xbXfn1uEQadBllE18.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbYrFMk1QuAIcyEwG_X-dpEfaE5YaERmK-CImKsvxvU-MXGX2fSqasNfUvz2xbXfn1uEQadAClE18.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbYrFMk1QuAIcyEwG_X-dpEfaE5YaERmK-CImqvTxvU-MXGX2fSqasNfUvz2xbXfn1uEQadAClE18.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbQr6Mk1QuAIcyEwG_X-dpEfaE5YaERmK-CImKsvxvU-MXGX2fSqasNfUvz2xbXfn1uEQadAClE18.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbQr6Mk1QuAIcyEwG_X-dpEfaE5YaERmK-CImqvTxvU-MXGX2fSqasNfUvz2xbXfn1uEQadAClE18.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbYrFMk1QuAIcyEwG_X-dpEfaE5YaERmK-CImKsvxvU-MXGX2fSqasNfUvz2xbXfn1uEQadArlE18.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbYrFMk1QuAIcyEwG_X-dpEfaE5YaERmK-CImqvTxvU-MXGX2fSqasNfUvz2xbXfn1uEQadArlE18.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbQr6Mk1QuAIcyEwG_X-dpEfaE5YaERmK-CImKsvxvU-MXGX2fSqasNfUvz2xbXfn1uEQadArlE18.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Recursive';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url(Recursive/8vJN7wMr0mhh-RQChyHEH06TlXhq_gukbQr6Mk1QuAIcyEwG_X-dpEfaE5YaERmK-CImqvTxvU-MXGX2fSqasNfUvz2xbXfn1uEQadArlE18.ttf) format('truetype');
+}
