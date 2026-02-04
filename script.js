@@ -2291,9 +2291,15 @@ function showDiceModal() {
                     </select>
                 </div>
                 <div class="form-group" style="flex: 1;">
-                    <label>Modificador</label>
-                    <input type="number" class="modal-input" id="dice-modifier" placeholder="Ex: +2 ou -1" value="0">
+                    <label>Mod. Atributo</label>
+                    <input type="number" class="modal-input" id="dice-mod-attr" placeholder="Ex: +2 ou -1" value="0">
                 </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Mod. Rolagem</label>
+                    <input type="number" class="modal-input" id="dice-mod-roll" placeholder="Ex: +2 ou -1" value="0">
+                </div>
+            </div>
+            <div class="form-row">
                 <div class="form-group" style="flex: 1;">
                     <label>Meta</label>
                     <input type="number" class="modal-input" id="dice-meta" placeholder="Ex: 15" min="1" value="">
@@ -2389,7 +2395,8 @@ function updateDiceAttributeValue() {
 function rollDice() {
     const diceCount = parseInt(document.getElementById('dice-count').value) || 3;
     const attributeValue = parseInt(document.getElementById('dice-attribute-value').value) || 0;
-    const modifier = parseInt(document.getElementById('dice-modifier').value) || 0;
+    const modifierAttribute = parseInt(document.getElementById('dice-mod-attr').value) || 0;
+    const modifierRoll = parseInt(document.getElementById('dice-mod-roll').value) || 0;
     const meta = parseInt(document.getElementById('dice-meta').value) || 0;
     
     // Get attribute name
@@ -2421,11 +2428,10 @@ function rollDice() {
         return;
     }
     
-    // Calculate final attribute value (base + modifier)
-    const finalAttributeValue = attributeValue + modifier;
-    
-    if (!Number.isFinite(finalAttributeValue)) {
-        alert('O valor final do atributo (atributo + modificador) não é válido.');
+    const finalAttributeValue = attributeValue + modifierAttribute;
+
+    if (!Number.isFinite(finalAttributeValue) || !Number.isFinite(modifierRoll)) {
+        alert('O valor final do atributo ou o modificador de rolagem não é válido.');
         return;
     }
     
@@ -2437,7 +2443,7 @@ function rollDice() {
     
     // Calculate base result (sum of dice + attribute value)
     const diceSum = diceResults.reduce((sum, val) => sum + val, 0);
-    const baseResult = diceSum + finalAttributeValue;
+    const baseResult = diceSum + finalAttributeValue + modifierRoll;
     
     // Count critical successes (6s) - each 6 adds the attribute value again
     const criticalCount = diceResults.filter(val => val === 6).length;
