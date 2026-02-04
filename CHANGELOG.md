@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-04
+
+### Added
+- **Inventário**
+  - Inventory line on character cards with Comum/Incomum/Raro slots
+  - Tier-based inventory selection (Sem Inventário, Inventário 1–3)
+  - Double-click slots to spend/recover items
+  - Inventory changes tracked in the resource history
+
+### Changed
+- **Character Cards**
+  - Attribute summary moved under the avatar (Poder, Habilidade, Resistência)
+  - Status and Inventário presented as tag-style sections
+- **Dice Roller**
+  - Attribute value can be 0
+
+---
+
 ## [1.1.0] - 2026-02-03
 
 ### Added
@@ -121,8 +139,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History
 
+- **1.2.0** - Inventário system, card layout updates, and dice roll updates
 - **1.1.0** - UI refactor, fonts bundled, autosave/recovery, round tracker, status effects, resource history, and character editing
 - **1.0.0** - Initial stable release
 
+[1.2.0]: https://github.com/yourusername/3DeT-Victory-Tracker/releases/tag/v1.2.0
 [1.1.0]: https://github.com/yourusername/3DeT-Victory-Tracker/releases/tag/v1.1.0
 [1.0.0]: https://github.com/yourusername/3DeT-Victory-Tracker/releases/tag/v1.0.0
