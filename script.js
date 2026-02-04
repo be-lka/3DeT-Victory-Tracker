@@ -40,6 +40,11 @@ let resourceHistory = [];
 let roundNumber = 0;
 let turnsThisRound = 0;
 const DEFAULT_AVATAR = 'img/default_character.jpg';
+const RESOURCE_BONUS = {
+    vida: 10,
+    mana: 10,
+    acao: 2
+};
 const STATUS_EFFECTS = [
     {
         key: 'desprevenido',
@@ -206,10 +211,28 @@ function ensureCharacterInventory(character) {
 function normalizeCharacterData(character) {
     const normalized = {
         ...character,
-        statuses: normalizeStatusList(character.statuses)
+        statuses: normalizeStatusList(character.statuses),
+        vantagemVida: clampNumber(toFiniteInt(character.vantagemVida, 0), 0, 99),
+        vantagemMana: clampNumber(toFiniteInt(character.vantagemMana, 0), 0, 99),
+        vantagemAcao: clampNumber(toFiniteInt(character.vantagemAcao, 0), 0, 99)
     };
     ensureCharacterInventory(normalized);
     return normalized;
+}
+
+function getMaxVida(character) {
+    const bonus = (character.vantagemVida || 0) * RESOURCE_BONUS.vida;
+    return character.resistencia * 5 + bonus;
+}
+
+function getMaxMana(character) {
+    const bonus = (character.vantagemMana || 0) * RESOURCE_BONUS.mana;
+    return character.habilidade * 5 + bonus;
+}
+
+function getMaxAcao(character) {
+    const bonus = (character.vantagemAcao || 0) * RESOURCE_BONUS.acao;
+    return character.poder + bonus;
 }
 
 // Load characters from JSON file
@@ -484,9 +507,9 @@ function createCharacterCard(character, isCurrentTurn = false) {
     ensureCharacterInventory(character);
     
     // Calculate max values
-    const maxVida = character.resistencia * 5;
-    const maxMana = character.habilidade * 5;
-    const maxAcao = character.poder;
+    const maxVida = getMaxVida(character);
+    const maxMana = getMaxMana(character);
+    const maxAcao = getMaxAcao(character);
     
     // Ensure current values don't exceed max (but allow 0 values)
     // Use explicit checks to only default if value is null or undefined (not 0)
@@ -591,7 +614,7 @@ function createCharacterCard(character, isCurrentTurn = false) {
                     </div>
                         <div class="status-bar" data-character-id="${character.id}" data-type="vida" data-max="${maxVida}">
                             <div class="status-bar-fill health" style="width: ${vidaPercent}%"></div>
-                            ${hiddenValues ? '' : `<span class="status-bar-value">${character.pontosVida} / ${maxVida}</span>`}
+                            ${hiddenValues ? '' : `<span class="status-bar-value health-value">${character.pontosVida} / ${maxVida}</span>`}
                         </div>
                     </div>
                     <div class="status-bar-container">
@@ -600,7 +623,7 @@ function createCharacterCard(character, isCurrentTurn = false) {
                     </div>
                         <div class="status-bar" data-character-id="${character.id}" data-type="mana" data-max="${maxMana}">
                             <div class="status-bar-fill mana" style="width: ${manaPercent}%"></div>
-                            ${hiddenValues ? '' : `<span class="status-bar-value">${character.pontosMana} / ${maxMana}</span>`}
+                            ${hiddenValues ? '' : `<span class="status-bar-value mana-value">${character.pontosMana} / ${maxMana}</span>`}
                         </div>
                     </div>
                     <div class="status-bar-container">
@@ -609,7 +632,7 @@ function createCharacterCard(character, isCurrentTurn = false) {
                     </div>
                         <div class="status-bar" data-character-id="${character.id}" data-type="acao" data-max="${maxAcao}">
                             <div class="status-bar-fill action" style="width: ${acaoPercent}%"></div>
-                            ${hiddenValues ? '' : `<span class="status-bar-value">${character.pontosAcao} / ${maxAcao}</span>`}
+                            ${hiddenValues ? '' : `<span class="status-bar-value action-value">${character.pontosAcao} / ${maxAcao}</span>`}
                         </div>
                     </div>
                 </div>
@@ -945,6 +968,22 @@ function closeModal() {
     }
 }
 
+function setupAdvantageSteppers(overlay) {
+    overlay.querySelectorAll('.advantage-stepper').forEach((stepper) => {
+        const input = stepper.querySelector('.advantage-value');
+        const min = parseInt(input.min, 10) || 0;
+        const max = 99;
+        stepper.querySelectorAll('.advantage-btn').forEach((button) => {
+            button.addEventListener('click', () => {
+                const current = parseInt(input.value, 10) || 0;
+                const delta = button.dataset.action === 'inc' ? 1 : -1;
+                const next = Math.min(max, Math.max(min, current + delta));
+                input.value = next;
+            });
+        });
+    });
+}
+
 function applyValue(characterId, type) {
     const input = document.getElementById('value-input');
     const valueStr = input.value.trim();
@@ -969,9 +1008,9 @@ function applyValue(characterId, type) {
     };
     
     const property = propertyMap[type];
-    const maxProperty = type === 'vida' ? 'resistencia' : (type === 'mana' ? 'habilidade' : 'poder');
-    const maxMultiplier = type === 'vida' ? 5 : (type === 'mana' ? 5 : 1);
-    const maxValue = character[maxProperty] * maxMultiplier;
+    const maxValue = type === 'vida'
+        ? getMaxVida(character)
+        : (type === 'mana' ? getMaxMana(character) : getMaxAcao(character));
     
     // Store old value to detect healing/damage
     const oldValue = character[property];
@@ -1194,6 +1233,38 @@ function showAddCharacterModal() {
                     <input type="number" class="modal-input" id="char-resistencia" placeholder="1" min="1" value="1">
                 </div>
             </div>
+            <div class="form-group">
+                <label>Vantagens (+Vida, +Mana, +Ação)</label>
+                <div class="advantage-row">
+                    <div class="advantage-stepper" data-target="char-vantagem-vida">
+                        <span class="advantage-label">+Vida</span>
+                        <div class="advantage-controls">
+                            <button type="button" class="advantage-btn" data-action="dec">-</button>
+                            <input type="number" class="advantage-value" id="char-vantagem-vida" min="0" value="0" readonly>
+                            <button type="button" class="advantage-btn" data-action="inc">+</button>
+                        </div>
+                        <span class="advantage-hint">+10 PV por ponto</span>
+                    </div>
+                    <div class="advantage-stepper" data-target="char-vantagem-mana">
+                        <span class="advantage-label">+Mana</span>
+                        <div class="advantage-controls">
+                            <button type="button" class="advantage-btn" data-action="dec">-</button>
+                            <input type="number" class="advantage-value" id="char-vantagem-mana" min="0" value="0" readonly>
+                            <button type="button" class="advantage-btn" data-action="inc">+</button>
+                        </div>
+                        <span class="advantage-hint">+10 PM por ponto</span>
+                    </div>
+                    <div class="advantage-stepper" data-target="char-vantagem-acao">
+                        <span class="advantage-label">+Ação</span>
+                        <div class="advantage-controls">
+                            <button type="button" class="advantage-btn" data-action="dec">-</button>
+                            <input type="number" class="advantage-value" id="char-vantagem-acao" min="0" value="0" readonly>
+                            <button type="button" class="advantage-btn" data-action="inc">+</button>
+                        </div>
+                        <span class="advantage-hint">+2 PA por ponto</span>
+                    </div>
+                </div>
+            </div>
             <div class="modal-buttons">
                 <button class="modal-button" onclick="closeModal()">Cancelar</button>
                 <button class="modal-button primary" onclick="addCharacter()">Adicionar</button>
@@ -1223,6 +1294,8 @@ function showAddCharacterModal() {
         };
         reader.readAsDataURL(file);
     });
+
+    setupAdvantageSteppers(overlay);
     
     // Close on overlay click
     overlay.addEventListener('click', (e) => {
@@ -1241,6 +1314,9 @@ function addCharacter() {
     const poder = parseInt(document.getElementById('char-poder').value) || 1;
     const habilidade = parseInt(document.getElementById('char-habilidade').value) || 1;
     const resistencia = parseInt(document.getElementById('char-resistencia').value) || 1;
+    const vantagemVida = clampNumber(toFiniteInt(document.getElementById('char-vantagem-vida').value, 0), 0, 99);
+    const vantagemMana = clampNumber(toFiniteInt(document.getElementById('char-vantagem-mana').value, 0), 0, 99);
+    const vantagemAcao = clampNumber(toFiniteInt(document.getElementById('char-vantagem-acao').value, 0), 0, 99);
     
     if (!name) {
         alert('Por favor, insira um nome para o personagem.');
@@ -1254,6 +1330,9 @@ function addCharacter() {
     const maxVida = resistencia * 5;
     const maxMana = habilidade * 5;
     const maxAcao = poder;
+    const bonusVida = vantagemVida * RESOURCE_BONUS.vida;
+    const bonusMana = vantagemMana * RESOURCE_BONUS.mana;
+    const bonusAcao = vantagemAcao * RESOURCE_BONUS.acao;
     
     const newCharacter = {
         id: newId,
@@ -1264,12 +1343,15 @@ function addCharacter() {
         battlefieldSection: defaultBattlefieldSection,
         statuses: [],
         inventarioNivel: 0,
+        vantagemVida,
+        vantagemMana,
+        vantagemAcao,
         poder: poder,
         habilidade: habilidade,
         resistencia: resistencia,
-        pontosVida: maxVida,
-        pontosMana: maxMana,
-        pontosAcao: maxAcao
+        pontosVida: maxVida + bonusVida,
+        pontosMana: maxMana + bonusMana,
+        pontosAcao: maxAcao + bonusAcao
     };
     
     characters.push(newCharacter);
@@ -1321,6 +1403,38 @@ function showEditCharacterModal(characterId) {
                     <input type="number" class="modal-input" id="edit-char-resistencia" placeholder="12" min="1" value="${character.resistencia}">
                 </div>
             </div>
+            <div class="form-group">
+                <label>Vantagens (+Vida, +Mana, +Ação)</label>
+                <div class="advantage-row">
+                    <div class="advantage-stepper" data-target="edit-char-vantagem-vida">
+                        <span class="advantage-label">+Vida</span>
+                        <div class="advantage-controls">
+                            <button type="button" class="advantage-btn" data-action="dec">-</button>
+                            <input type="number" class="advantage-value" id="edit-char-vantagem-vida" min="0" value="${character.vantagemVida || 0}" readonly>
+                            <button type="button" class="advantage-btn" data-action="inc">+</button>
+                        </div>
+                        <span class="advantage-hint">+10 PV por ponto</span>
+                    </div>
+                    <div class="advantage-stepper" data-target="edit-char-vantagem-mana">
+                        <span class="advantage-label">+Mana</span>
+                        <div class="advantage-controls">
+                            <button type="button" class="advantage-btn" data-action="dec">-</button>
+                            <input type="number" class="advantage-value" id="edit-char-vantagem-mana" min="0" value="${character.vantagemMana || 0}" readonly>
+                            <button type="button" class="advantage-btn" data-action="inc">+</button>
+                        </div>
+                        <span class="advantage-hint">+10 PM por ponto</span>
+                    </div>
+                    <div class="advantage-stepper" data-target="edit-char-vantagem-acao">
+                        <span class="advantage-label">+Ação</span>
+                        <div class="advantage-controls">
+                            <button type="button" class="advantage-btn" data-action="dec">-</button>
+                            <input type="number" class="advantage-value" id="edit-char-vantagem-acao" min="0" value="${character.vantagemAcao || 0}" readonly>
+                            <button type="button" class="advantage-btn" data-action="inc">+</button>
+                        </div>
+                        <span class="advantage-hint">+2 PA por ponto</span>
+                    </div>
+                </div>
+            </div>
             <div class="modal-hint">Dica: para alterar o avatar, dê duplo clique na foto.</div>
             <div class="modal-buttons">
                 <button class="modal-button" onclick="closeModal()">Cancelar</button>
@@ -1335,6 +1449,8 @@ function showEditCharacterModal(characterId) {
     saveBtn.addEventListener('click', () => {
         updateCharacter(characterId);
     });
+
+    setupAdvantageSteppers(overlay);
 
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
@@ -1353,19 +1469,22 @@ function updateCharacter(characterId) {
     const poder = parseInt(document.getElementById('edit-char-poder').value, 10) || character.poder;
     const habilidade = parseInt(document.getElementById('edit-char-habilidade').value, 10) || character.habilidade;
     const resistencia = parseInt(document.getElementById('edit-char-resistencia').value, 10) || character.resistencia;
+    const vantagemVida = clampNumber(toFiniteInt(document.getElementById('edit-char-vantagem-vida').value, 0), 0, 99);
+    const vantagemMana = clampNumber(toFiniteInt(document.getElementById('edit-char-vantagem-mana').value, 0), 0, 99);
+    const vantagemAcao = clampNumber(toFiniteInt(document.getElementById('edit-char-vantagem-acao').value, 0), 0, 99);
 
     if (!name) {
         alert('Por favor, insira um nome para o personagem.');
         return;
     }
 
-    const oldMaxVida = character.resistencia * 5;
-    const oldMaxMana = character.habilidade * 5;
-    const oldMaxAcao = character.poder;
+    const oldMaxVida = getMaxVida(character);
+    const oldMaxMana = getMaxMana(character);
+    const oldMaxAcao = getMaxAcao(character);
 
-    const newMaxVida = resistencia * 5;
-    const newMaxMana = habilidade * 5;
-    const newMaxAcao = poder;
+    const newMaxVida = resistencia * 5 + vantagemVida * RESOURCE_BONUS.vida;
+    const newMaxMana = habilidade * 5 + vantagemMana * RESOURCE_BONUS.mana;
+    const newMaxAcao = poder + vantagemAcao * RESOURCE_BONUS.acao;
 
     const wasFullVida = character.pontosVida >= oldMaxVida;
     const wasFullMana = character.pontosMana >= oldMaxMana;
@@ -1377,6 +1496,9 @@ function updateCharacter(characterId) {
     character.poder = poder;
     character.habilidade = habilidade;
     character.resistencia = resistencia;
+    character.vantagemVida = vantagemVida;
+    character.vantagemMana = vantagemMana;
+    character.vantagemAcao = vantagemAcao;
 
     if (character.pontosVida === undefined || character.pontosVida === null || wasFullVida) {
         character.pontosVida = newMaxVida;
@@ -1765,6 +1887,12 @@ function normalizeImportedCharacters(rawText) {
         const maxVida = resistencia * 5;
         const maxMana = habilidade * 5;
         const maxAcao = poder;
+        const vantagemVida = clampNumber(toFiniteInt(item.vantagemVida, 0), 0, 99);
+        const vantagemMana = clampNumber(toFiniteInt(item.vantagemMana, 0), 0, 99);
+        const vantagemAcao = clampNumber(toFiniteInt(item.vantagemAcao, 0), 0, 99);
+        const maxVidaTotal = maxVida + vantagemVida * RESOURCE_BONUS.vida;
+        const maxManaTotal = maxMana + vantagemMana * RESOURCE_BONUS.mana;
+        const maxAcaoTotal = maxAcao + vantagemAcao * RESOURCE_BONUS.acao;
         const hasPontosVida = Object.prototype.hasOwnProperty.call(item, 'pontosVida');
         const hasPontosMana = Object.prototype.hasOwnProperty.call(item, 'pontosMana');
         const hasPontosAcao = Object.prototype.hasOwnProperty.call(item, 'pontosAcao');
@@ -1773,14 +1901,14 @@ function normalizeImportedCharacters(rawText) {
         const rawMana = parseInt(item.pontosMana, 10);
         const rawAcao = parseInt(item.pontosAcao, 10);
         const pontosVida = hasPontosVida && Number.isFinite(rawVida)
-            ? Math.max(0, Math.min(rawVida, maxVida))
-            : maxVida;
+            ? Math.max(0, Math.min(rawVida, maxVidaTotal))
+            : maxVidaTotal;
         const pontosMana = hasPontosMana && Number.isFinite(rawMana)
-            ? Math.max(0, Math.min(rawMana, maxMana))
-            : maxMana;
+            ? Math.max(0, Math.min(rawMana, maxManaTotal))
+            : maxManaTotal;
         const pontosAcao = hasPontosAcao && Number.isFinite(rawAcao)
-            ? Math.max(0, Math.min(rawAcao, maxAcao))
-            : maxAcao;
+            ? Math.max(0, Math.min(rawAcao, maxAcaoTotal))
+            : maxAcaoTotal;
 
         const entry = {
             ...item,
@@ -1794,6 +1922,9 @@ function normalizeImportedCharacters(rawText) {
             poder,
             habilidade,
             resistencia,
+            vantagemVida,
+            vantagemMana,
+            vantagemAcao,
             pontosVida,
             pontosMana,
             pontosAcao,
@@ -1805,6 +1936,9 @@ function normalizeImportedCharacters(rawText) {
                 pontosVida: hasPontosVida,
                 pontosMana: hasPontosMana,
                 pontosAcao: hasPontosAcao,
+                vantagemVida: Object.prototype.hasOwnProperty.call(item, 'vantagemVida'),
+                vantagemMana: Object.prototype.hasOwnProperty.call(item, 'vantagemMana'),
+                vantagemAcao: Object.prototype.hasOwnProperty.call(item, 'vantagemAcao'),
                 iniciativa: Object.prototype.hasOwnProperty.call(item, 'iniciativa'),
                 iniciativaOriginal: Object.prototype.hasOwnProperty.call(item, 'iniciativaOriginal'),
                 turnOrder: Object.prototype.hasOwnProperty.call(item, 'turnOrder')
