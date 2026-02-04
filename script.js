@@ -54,7 +54,7 @@ const STATUS_EFFECTS = [
     {
         key: 'indefeso',
         label: 'Indefeso',
-        description: 'Não rola dados na defesa (só Resistência + bônus passivos). Inclui casos como paralisado e inconsciente.'
+        description: 'Não rola dados na defesa (só Resistência + bônus passivos).'
     },
     {
         key: 'caido',
@@ -74,7 +74,7 @@ const STATUS_EFFECTS = [
     {
         key: 'paralisado',
         label: 'Paralisado',
-        description: 'O alvo paralisado fica indefeso.'
+        description: 'Não rola dados na defesa (só Resistência + bônus passivos).'
     },
     {
         key: 'exausto',
@@ -2465,7 +2465,7 @@ function showDiceModal() {
     overlay.className = 'modal-overlay active';
     
     // Build character options
-    let characterOptions = '<option value="">Nenhum (rolar sem personagem)</option>';
+    let characterOptions = '<option value="">Rolar sem Personagem</option>';
     characters.forEach(char => {
         characterOptions += `<option value="${char.id}">${char.name}</option>`;
     });
@@ -2481,7 +2481,6 @@ function showDiceModal() {
             </div>
             <div class="dice-grid">
                 <div class="form-group dice-row dice-row-dice">
-                    <label>Qnt. Dados</label>
                     <div class="dice-count-selector" id="dice-count-selector" data-count="1" aria-label="Quantidade de dados">
                         <button type="button" class="dice-count-btn selected" data-count="1" aria-label="1 dado">🎲</button>
                         <button type="button" class="dice-count-btn" data-count="2" aria-label="2 dados">🎲</button>

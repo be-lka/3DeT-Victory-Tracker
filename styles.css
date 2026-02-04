@@ -55,6 +55,12 @@
     --shadow: rgba(0, 0, 0, 0.3);
 }
 
+[data-theme="dark"] .dice-modal .form-group label,
+[data-theme="dark"] .dice-row-controls .form-group label,
+[data-theme="dark"] .dice-meta label {
+    color: #94a3d1;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -2388,12 +2394,23 @@ input[type="checkbox"] {
 .dice-modal .form-group label {
     font-size: 0.85em;
     margin-bottom: 4px;
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
 }
 
 .dice-modal .modal-input {
     padding: 8px 10px;
     font-size: 0.95em;
     margin-bottom: 0;
+    font-family: var(--font-body);
+}
+
+.dice-modal .modal-input[type="number"] {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
 }
 
 .dice-modal .form-row {
@@ -2452,6 +2469,10 @@ input[type="checkbox"] {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
 }
 
 .dice-modal:not(.has-character) .dice-row-controls {
@@ -2474,12 +2495,20 @@ input[type="checkbox"] {
 .dice-meta label {
     text-align: center;
     width: 100%;
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
 }
 
 .dice-meta .modal-input {
     text-align: center;
-    max-width: 80px;
-    padding: 8px 6px;
+    max-width: 120px;
+    min-width: 100px;
+    padding: 8px 10px;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
 }
 
 .dice-count-selector {
@@ -2500,6 +2529,7 @@ input[type="checkbox"] {
     cursor: pointer;
     transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     font-size: 1.6em;
+    font-family: var(--font-body);
 }
 
 .dice-count-btn:hover {
@@ -2531,6 +2561,8 @@ input[type="checkbox"] {
     font-size: 1.2em;
     cursor: pointer;
     transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    font-family: var(--font-display);
+    letter-spacing: 0.05em;
 }
 
 .dice-attribute-btn:hover {
@@ -2558,6 +2590,13 @@ input[type="checkbox"] {
     font-weight: 700;
     cursor: pointer;
     transition: border-color 0.2s ease, transform 0.2s ease;
+    font-family: var(--font-body);
+    font-size: 1.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
 }
 
 .dice-stepper-btn:hover {
@@ -2571,9 +2610,16 @@ input[type="checkbox"] {
     height: 64px;
     min-width: 40px;
     width: 100%;
-    padding: 0 4px;
+    padding: 0;
     max-width: 100%;
     box-sizing: border-box;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
 
 .dice-modal .modal-buttons {
@@ -2627,7 +2673,7 @@ input[type="checkbox"] {
     font-weight: 700;
     color: var(--accent);
     margin-bottom: 10px;
-    font-family: var(--font-body);
+    font-family: var(--font-display);
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
@@ -2635,12 +2681,17 @@ input[type="checkbox"] {
 .dice-roll-title strong {
     font-size: 1.3em;
     color: var(--yellow);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
 }
 
 .dice-roll-breakdown {
     font-size: 0.9em;
     color: var(--text-secondary);
     margin-top: 8px;
+    font-family: var(--font-recursive);
+    font-variant-numeric: tabular-nums;
 }
 
 .dice-display {
@@ -2666,6 +2717,8 @@ input[type="checkbox"] {
     color: var(--text-primary);
     transition: all 0.3s ease;
     box-shadow: 0 2px 4px var(--shadow);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
 }
 
 .dice-critical {
@@ -2777,7 +2830,7 @@ input[type="checkbox"] {
     margin-top: 15px;
     padding: 12px;
     border-radius: 6px;
-    font-family: var(--font-body);
+    font-family: var(--font-display);
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
