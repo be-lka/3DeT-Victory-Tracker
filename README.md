@@ -50,6 +50,28 @@ Uma ferramenta simples e prática para gerenciar personagens, combates e posicio
 - Cole um link de imagem ou faça upload de uma imagem
 - Clique em **Aplicar**
 
+### Rolar Dados
+
+1. Clique em **🎲 Rolar Dados**
+2. Escolha um personagem ou **Nenhum** para rolar manualmente
+3. Selecione o atributo (Poder, Habilidade ou Resistência)
+4. Se estiver no modo manual, digite o valor do atributo (pode ser 0)
+5. Defina a quantidade de dados (1 a 3), modificador e meta (opcional)
+6. Clique em **Rolar!**
+7. O resultado soma dados + atributo + modificador, cada 6 adiciona o valor do atributo novamente, e todos 1 indicam falha crítica
+
+### Inventário
+
+1. Clique em **INVENTÁRIO** no card do personagem
+2. Selecione o tier do inventário:
+   - Sem Inventário: 2 Comum
+   - Inventário 1: 3 Comum + 1 Incomum
+   - Inventário 2: 5 Comum + 2 Incomum
+   - Inventário 3: 5 Comum + 4 Incomum + 1 Raro
+3. No card, **duplo clique** em um quadrado para gastar ou recuperar um item
+   - Clique simples destaca o item
+   - Os usos aparecem no **Histórico de Recursos**
+
 ### Modo Combate
 
 1. Clique no botão **⚔️ COMBATE!** para ativar o modo de combate
@@ -100,6 +122,16 @@ Uma ferramenta simples e prática para gerenciar personagens, combates e posicio
 - Animações visuais quando você cura, causa dano, gasta ou recupera mana/ação
 - Cálculo automático dos valores máximos baseado nas estatísticas
 - Aviso visual "Perto da Morte" quando a vida está igual ou abaixo da Resistência
+
+### Rolar Dados
+- Rola 1 a 3 dados com atributo e modificador
+- Pode usar personagem ou valor manual (atributo pode ser 0)
+- Meta opcional com indicação de sucesso, sucesso perfeito, falha e falha crítica
+
+### Inventário
+- Linha de inventário por personagem com slots de Comum, Incomum e Raro
+- Tier fixo por personagem (Sem Inventário, Inventário 1–3)
+- Duplo clique para gastar/recuperar itens, com registro no histórico
 
 ## ⚠️ Importante
 
