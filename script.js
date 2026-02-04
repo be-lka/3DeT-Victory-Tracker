@@ -40,6 +40,11 @@ let resourceHistory = [];
 let roundNumber = 0;
 let turnsThisRound = 0;
 const DEFAULT_AVATAR = 'img/default_character.jpg';
+const RESOURCE_BONUS = {
+    vida: 10,
+    mana: 10,
+    acao: 2
+};
 const STATUS_EFFECTS = [
     {
         key: 'desprevenido',
@@ -49,7 +54,7 @@ const STATUS_EFFECTS = [
     {
         key: 'indefeso',
         label: 'Indefeso',
-        description: 'Não rola dados na defesa (só Resistência + bônus passivos). Inclui casos como paralisado e inconsciente.'
+        description: 'Não rola dados na defesa (só Resistência + bônus passivos).'
     },
     {
         key: 'caido',
@@ -69,7 +74,7 @@ const STATUS_EFFECTS = [
     {
         key: 'paralisado',
         label: 'Paralisado',
-        description: 'O alvo paralisado fica indefeso.'
+        description: 'Não rola dados na defesa (só Resistência + bônus passivos).'
     },
     {
         key: 'exausto',
@@ -206,15 +211,34 @@ function ensureCharacterInventory(character) {
 function normalizeCharacterData(character) {
     const normalized = {
         ...character,
-        statuses: normalizeStatusList(character.statuses)
+        statuses: normalizeStatusList(character.statuses),
+        vantagemVida: clampNumber(toFiniteInt(character.vantagemVida, 0), 0, 99),
+        vantagemMana: clampNumber(toFiniteInt(character.vantagemMana, 0), 0, 99),
+        vantagemAcao: clampNumber(toFiniteInt(character.vantagemAcao, 0), 0, 99)
     };
     ensureCharacterInventory(normalized);
     return normalized;
 }
 
+function getMaxVida(character) {
+    const bonus = (character.vantagemVida || 0) * RESOURCE_BONUS.vida;
+    return character.resistencia * 5 + bonus;
+}
+
+function getMaxMana(character) {
+    const bonus = (character.vantagemMana || 0) * RESOURCE_BONUS.mana;
+    return character.habilidade * 5 + bonus;
+}
+
+function getMaxAcao(character) {
+    const bonus = (character.vantagemAcao || 0) * RESOURCE_BONUS.acao;
+    return character.poder + bonus;
+}
+
 // Load characters from JSON file
 async function loadCharacters() {
     if (loadFromLocalStorage()) {
+        addCharacter._busy = false;
         return;
     }
     try {
@@ -252,10 +276,17 @@ async function loadCharacters() {
 
 // Save characters to JSON (using localStorage as fallback since we can't write to files directly)
 function saveCharacters() {
-    localStorage.setItem(STORAGE_KEYS.characters, JSON.stringify(characters));
-    queueAutosave();
-    // Note: In a real scenario, you'd need a backend to save to JSON file
-    // For now, we'll use localStorage as the primary storage
+    try {
+        localStorage.setItem(STORAGE_KEYS.characters, JSON.stringify(characters));
+        queueAutosave();
+        return true;
+        // Note: In a real scenario, you'd need a backend to save to JSON file
+        // For now, we'll use localStorage as the primary storage
+    } catch (error) {
+        console.error('Erro ao salvar personagens:', error);
+        alert('Não foi possível salvar os dados. A imagem pode estar muito grande. Tente usar uma imagem menor.');
+        return false;
+    }
 }
 
 // Load from localStorage on page load
@@ -484,9 +515,9 @@ function createCharacterCard(character, isCurrentTurn = false) {
     ensureCharacterInventory(character);
     
     // Calculate max values
-    const maxVida = character.resistencia * 5;
-    const maxMana = character.habilidade * 5;
-    const maxAcao = character.poder;
+    const maxVida = getMaxVida(character);
+    const maxMana = getMaxMana(character);
+    const maxAcao = getMaxAcao(character);
     
     // Ensure current values don't exceed max (but allow 0 values)
     // Use explicit checks to only default if value is null or undefined (not 0)
@@ -591,7 +622,7 @@ function createCharacterCard(character, isCurrentTurn = false) {
                     </div>
                         <div class="status-bar" data-character-id="${character.id}" data-type="vida" data-max="${maxVida}">
                             <div class="status-bar-fill health" style="width: ${vidaPercent}%"></div>
-                            ${hiddenValues ? '' : `<span class="status-bar-value">${character.pontosVida} / ${maxVida}</span>`}
+                            ${hiddenValues ? '' : `<span class="status-bar-value health-value">${character.pontosVida} / ${maxVida}</span>`}
                         </div>
                     </div>
                     <div class="status-bar-container">
@@ -600,7 +631,7 @@ function createCharacterCard(character, isCurrentTurn = false) {
                     </div>
                         <div class="status-bar" data-character-id="${character.id}" data-type="mana" data-max="${maxMana}">
                             <div class="status-bar-fill mana" style="width: ${manaPercent}%"></div>
-                            ${hiddenValues ? '' : `<span class="status-bar-value">${character.pontosMana} / ${maxMana}</span>`}
+                            ${hiddenValues ? '' : `<span class="status-bar-value mana-value">${character.pontosMana} / ${maxMana}</span>`}
                         </div>
                     </div>
                     <div class="status-bar-container">
@@ -609,7 +640,7 @@ function createCharacterCard(character, isCurrentTurn = false) {
                     </div>
                         <div class="status-bar" data-character-id="${character.id}" data-type="acao" data-max="${maxAcao}">
                             <div class="status-bar-fill action" style="width: ${acaoPercent}%"></div>
-                            ${hiddenValues ? '' : `<span class="status-bar-value">${character.pontosAcao} / ${maxAcao}</span>`}
+                            ${hiddenValues ? '' : `<span class="status-bar-value action-value">${character.pontosAcao} / ${maxAcao}</span>`}
                         </div>
                     </div>
                 </div>
@@ -689,9 +720,9 @@ function createCharacterCard(character, isCurrentTurn = false) {
         });
     });
     
-    // Add double-click listener to avatar
+    // Add click listener to avatar
     const avatar = card.querySelector('.character-avatar');
-    avatar.addEventListener('dblclick', (e) => {
+    avatar.addEventListener('click', (e) => {
         e.stopPropagation();
         const characterId = parseInt(avatar.dataset.characterId);
         showAvatarModal(characterId);
@@ -945,6 +976,63 @@ function closeModal() {
     }
 }
 
+function setupAdvantageSteppers(overlay) {
+    overlay.querySelectorAll('.advantage-stepper').forEach((stepper) => {
+        const input = stepper.querySelector('.advantage-value');
+        const min = parseInt(input.min, 10) || 0;
+        const max = 99;
+        stepper.querySelectorAll('.advantage-btn').forEach((button) => {
+            button.addEventListener('click', () => {
+                const current = parseInt(input.value, 10) || 0;
+                const delta = button.dataset.action === 'inc' ? 1 : -1;
+                const next = Math.min(max, Math.max(min, current + delta));
+                input.value = next;
+            });
+        });
+    });
+}
+
+function convertImageFileToDataUrl(file) {
+    const maxDimension = 512;
+    const quality = 0.8;
+
+    return new Promise((resolve, reject) => {
+        if (!file || !file.type || !file.type.startsWith('image/')) {
+            reject(new Error('Arquivo inválido.'));
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Falha ao ler arquivo.'));
+        reader.onload = () => {
+            const img = new Image();
+            img.onerror = () => reject(new Error('Falha ao carregar imagem.'));
+            img.onload = () => {
+                const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
+                const targetWidth = Math.max(1, Math.round(img.width * scale));
+                const targetHeight = Math.max(1, Math.round(img.height * scale));
+
+                const canvas = document.createElement('canvas');
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    reject(new Error('Canvas indisponível.'));
+                    return;
+                }
+
+                ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+                const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                resolve(dataUrl);
+            };
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
 function applyValue(characterId, type) {
     const input = document.getElementById('value-input');
     const valueStr = input.value.trim();
@@ -969,9 +1057,9 @@ function applyValue(characterId, type) {
     };
     
     const property = propertyMap[type];
-    const maxProperty = type === 'vida' ? 'resistencia' : (type === 'mana' ? 'habilidade' : 'poder');
-    const maxMultiplier = type === 'vida' ? 5 : (type === 'mana' ? 5 : 1);
-    const maxValue = character[maxProperty] * maxMultiplier;
+    const maxValue = type === 'vida'
+        ? getMaxVida(character)
+        : (type === 'mana' ? getMaxMana(character) : getMaxAcao(character));
     
     // Store old value to detect healing/damage
     const oldValue = character[property];
@@ -1098,15 +1186,18 @@ function showAvatarModal(characterId) {
     
     // Handle file input
     const fileInput = overlay.querySelector('#avatar-file');
+    fileInput.addEventListener('click', () => {
+        fileInput.value = '';
+    });
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                // Store as data URL in the URL input for preview
-                urlInput.value = event.target.result;
-            };
-            reader.readAsDataURL(file);
+            convertImageFileToDataUrl(file).then((dataUrl) => {
+                urlInput.value = dataUrl;
+            }).catch((error) => {
+                console.error('Erro ao processar imagem:', error);
+                alert('Não foi possível carregar a imagem selecionada.');
+            });
         }
     });
     
@@ -1194,6 +1285,38 @@ function showAddCharacterModal() {
                     <input type="number" class="modal-input" id="char-resistencia" placeholder="1" min="1" value="1">
                 </div>
             </div>
+            <div class="form-group">
+                <label>Vantagens (+Vida, +Mana, +Ação)</label>
+                <div class="advantage-row">
+                    <div class="advantage-stepper" data-target="char-vantagem-vida">
+                        <span class="advantage-label">+Vida</span>
+                        <div class="advantage-controls">
+                            <button type="button" class="advantage-btn" data-action="dec">-</button>
+                            <input type="number" class="advantage-value" id="char-vantagem-vida" min="0" value="0" readonly>
+                            <button type="button" class="advantage-btn" data-action="inc">+</button>
+                        </div>
+                        <span class="advantage-hint">+10 PV por ponto</span>
+                    </div>
+                    <div class="advantage-stepper" data-target="char-vantagem-mana">
+                        <span class="advantage-label">+Mana</span>
+                        <div class="advantage-controls">
+                            <button type="button" class="advantage-btn" data-action="dec">-</button>
+                            <input type="number" class="advantage-value" id="char-vantagem-mana" min="0" value="0" readonly>
+                            <button type="button" class="advantage-btn" data-action="inc">+</button>
+                        </div>
+                        <span class="advantage-hint">+10 PM por ponto</span>
+                    </div>
+                    <div class="advantage-stepper" data-target="char-vantagem-acao">
+                        <span class="advantage-label">+Ação</span>
+                        <div class="advantage-controls">
+                            <button type="button" class="advantage-btn" data-action="dec">-</button>
+                            <input type="number" class="advantage-value" id="char-vantagem-acao" min="0" value="0" readonly>
+                            <button type="button" class="advantage-btn" data-action="inc">+</button>
+                        </div>
+                        <span class="advantage-hint">+2 PA por ponto</span>
+                    </div>
+                </div>
+            </div>
             <div class="modal-buttons">
                 <button class="modal-button" onclick="closeModal()">Cancelar</button>
                 <button class="modal-button primary" onclick="addCharacter()">Adicionar</button>
@@ -1214,15 +1337,21 @@ function showAddCharacterModal() {
 
     const fileInput = overlay.querySelector('#char-avatar-file');
     const urlInput = overlay.querySelector('#char-avatar');
+    fileInput.addEventListener('click', () => {
+        fileInput.value = '';
+    });
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            urlInput.value = event.target.result;
-        };
-        reader.readAsDataURL(file);
+        convertImageFileToDataUrl(file).then((dataUrl) => {
+            urlInput.value = dataUrl;
+        }).catch((error) => {
+            console.error('Erro ao processar imagem:', error);
+            alert('Não foi possível carregar a imagem selecionada.');
+        });
     });
+
+    setupAdvantageSteppers(overlay);
     
     // Close on overlay click
     overlay.addEventListener('click', (e) => {
@@ -1234,13 +1363,36 @@ function showAddCharacterModal() {
 
 // Add a new character
 function addCharacter() {
-    const name = document.getElementById('char-name').value.trim();
-    const avatar = document.getElementById('char-avatar').value.trim();
-    const type = document.getElementById('char-type').value;
-    const hiddenValues = document.getElementById('char-hidden-values').checked;
-    const poder = parseInt(document.getElementById('char-poder').value) || 1;
-    const habilidade = parseInt(document.getElementById('char-habilidade').value) || 1;
-    const resistencia = parseInt(document.getElementById('char-resistencia').value) || 1;
+    if (typeof addCharacter._busy === 'boolean' && addCharacter._busy) {
+        return;
+    }
+    addCharacter._busy = true;
+    try {
+    const nameEl = document.getElementById('char-name');
+    const avatarEl = document.getElementById('char-avatar');
+    const typeEl = document.getElementById('char-type');
+    const hiddenEl = document.getElementById('char-hidden-values');
+    const poderEl = document.getElementById('char-poder');
+    const habilidadeEl = document.getElementById('char-habilidade');
+    const resistenciaEl = document.getElementById('char-resistencia');
+    const vantagemVidaEl = document.getElementById('char-vantagem-vida');
+    const vantagemManaEl = document.getElementById('char-vantagem-mana');
+    const vantagemAcaoEl = document.getElementById('char-vantagem-acao');
+
+    if (!nameEl || !avatarEl || !typeEl || !hiddenEl || !poderEl || !habilidadeEl || !resistenciaEl) {
+        throw new Error('Formulário de personagem incompleto.');
+    }
+
+    const name = nameEl.value.trim();
+    const avatar = avatarEl.value.trim();
+    const type = typeEl.value;
+    const hiddenValues = hiddenEl.checked;
+    const poder = parseInt(poderEl.value) || 1;
+    const habilidade = parseInt(habilidadeEl.value) || 1;
+    const resistencia = parseInt(resistenciaEl.value) || 1;
+    const vantagemVida = clampNumber(toFiniteInt(vantagemVidaEl?.value, 0), 0, 99);
+    const vantagemMana = clampNumber(toFiniteInt(vantagemManaEl?.value, 0), 0, 99);
+    const vantagemAcao = clampNumber(toFiniteInt(vantagemAcaoEl?.value, 0), 0, 99);
     
     if (!name) {
         alert('Por favor, insira um nome para o personagem.');
@@ -1248,12 +1400,18 @@ function addCharacter() {
     }
     
     // Generate new ID
-    const newId = characters.length > 0 ? Math.max(...characters.map(c => c.id)) + 1 : 1;
+    const existingIds = characters.map(c => Number(c.id)).filter(Number.isFinite);
+    const newId = existingIds.length
+        ? Math.max(...existingIds) + 1
+        : (characters.length > 0 ? characters.length + 1 : 1);
     
     // Calculate initial values
     const maxVida = resistencia * 5;
     const maxMana = habilidade * 5;
     const maxAcao = poder;
+    const bonusVida = vantagemVida * RESOURCE_BONUS.vida;
+    const bonusMana = vantagemMana * RESOURCE_BONUS.mana;
+    const bonusAcao = vantagemAcao * RESOURCE_BONUS.acao;
     
     const newCharacter = {
         id: newId,
@@ -1264,18 +1422,28 @@ function addCharacter() {
         battlefieldSection: defaultBattlefieldSection,
         statuses: [],
         inventarioNivel: 0,
+        vantagemVida,
+        vantagemMana,
+        vantagemAcao,
         poder: poder,
         habilidade: habilidade,
         resistencia: resistencia,
-        pontosVida: maxVida,
-        pontosMana: maxMana,
-        pontosAcao: maxAcao
+        pontosVida: maxVida + bonusVida,
+        pontosMana: maxMana + bonusMana,
+        pontosAcao: maxAcao + bonusAcao
     };
     
     characters.push(newCharacter);
     saveCharacters();
     renderCharacters();
     closeModal();
+    } catch (error) {
+        console.error('Erro ao adicionar personagem:', error);
+        const message = error?.message ? `Erro: ${error.message}` : 'Erro inesperado ao adicionar personagem.';
+        alert(message);
+    } finally {
+        addCharacter._busy = false;
+    }
 }
 
 function showEditCharacterModal(characterId) {
@@ -1321,6 +1489,38 @@ function showEditCharacterModal(characterId) {
                     <input type="number" class="modal-input" id="edit-char-resistencia" placeholder="12" min="1" value="${character.resistencia}">
                 </div>
             </div>
+            <div class="form-group">
+                <label>Vantagens (+Vida, +Mana, +Ação)</label>
+                <div class="advantage-row">
+                    <div class="advantage-stepper" data-target="edit-char-vantagem-vida">
+                        <span class="advantage-label">+Vida</span>
+                        <div class="advantage-controls">
+                            <button type="button" class="advantage-btn" data-action="dec">-</button>
+                            <input type="number" class="advantage-value" id="edit-char-vantagem-vida" min="0" value="${character.vantagemVida || 0}" readonly>
+                            <button type="button" class="advantage-btn" data-action="inc">+</button>
+                        </div>
+                        <span class="advantage-hint">+10 PV por ponto</span>
+                    </div>
+                    <div class="advantage-stepper" data-target="edit-char-vantagem-mana">
+                        <span class="advantage-label">+Mana</span>
+                        <div class="advantage-controls">
+                            <button type="button" class="advantage-btn" data-action="dec">-</button>
+                            <input type="number" class="advantage-value" id="edit-char-vantagem-mana" min="0" value="${character.vantagemMana || 0}" readonly>
+                            <button type="button" class="advantage-btn" data-action="inc">+</button>
+                        </div>
+                        <span class="advantage-hint">+10 PM por ponto</span>
+                    </div>
+                    <div class="advantage-stepper" data-target="edit-char-vantagem-acao">
+                        <span class="advantage-label">+Ação</span>
+                        <div class="advantage-controls">
+                            <button type="button" class="advantage-btn" data-action="dec">-</button>
+                            <input type="number" class="advantage-value" id="edit-char-vantagem-acao" min="0" value="${character.vantagemAcao || 0}" readonly>
+                            <button type="button" class="advantage-btn" data-action="inc">+</button>
+                        </div>
+                        <span class="advantage-hint">+2 PA por ponto</span>
+                    </div>
+                </div>
+            </div>
             <div class="modal-hint">Dica: para alterar o avatar, dê duplo clique na foto.</div>
             <div class="modal-buttons">
                 <button class="modal-button" onclick="closeModal()">Cancelar</button>
@@ -1335,6 +1535,8 @@ function showEditCharacterModal(characterId) {
     saveBtn.addEventListener('click', () => {
         updateCharacter(characterId);
     });
+
+    setupAdvantageSteppers(overlay);
 
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
@@ -1353,19 +1555,22 @@ function updateCharacter(characterId) {
     const poder = parseInt(document.getElementById('edit-char-poder').value, 10) || character.poder;
     const habilidade = parseInt(document.getElementById('edit-char-habilidade').value, 10) || character.habilidade;
     const resistencia = parseInt(document.getElementById('edit-char-resistencia').value, 10) || character.resistencia;
+    const vantagemVida = clampNumber(toFiniteInt(document.getElementById('edit-char-vantagem-vida').value, 0), 0, 99);
+    const vantagemMana = clampNumber(toFiniteInt(document.getElementById('edit-char-vantagem-mana').value, 0), 0, 99);
+    const vantagemAcao = clampNumber(toFiniteInt(document.getElementById('edit-char-vantagem-acao').value, 0), 0, 99);
 
     if (!name) {
         alert('Por favor, insira um nome para o personagem.');
         return;
     }
 
-    const oldMaxVida = character.resistencia * 5;
-    const oldMaxMana = character.habilidade * 5;
-    const oldMaxAcao = character.poder;
+    const oldMaxVida = getMaxVida(character);
+    const oldMaxMana = getMaxMana(character);
+    const oldMaxAcao = getMaxAcao(character);
 
-    const newMaxVida = resistencia * 5;
-    const newMaxMana = habilidade * 5;
-    const newMaxAcao = poder;
+    const newMaxVida = resistencia * 5 + vantagemVida * RESOURCE_BONUS.vida;
+    const newMaxMana = habilidade * 5 + vantagemMana * RESOURCE_BONUS.mana;
+    const newMaxAcao = poder + vantagemAcao * RESOURCE_BONUS.acao;
 
     const wasFullVida = character.pontosVida >= oldMaxVida;
     const wasFullMana = character.pontosMana >= oldMaxMana;
@@ -1377,6 +1582,9 @@ function updateCharacter(characterId) {
     character.poder = poder;
     character.habilidade = habilidade;
     character.resistencia = resistencia;
+    character.vantagemVida = vantagemVida;
+    character.vantagemMana = vantagemMana;
+    character.vantagemAcao = vantagemAcao;
 
     if (character.pontosVida === undefined || character.pontosVida === null || wasFullVida) {
         character.pontosVida = newMaxVida;
@@ -1765,6 +1973,12 @@ function normalizeImportedCharacters(rawText) {
         const maxVida = resistencia * 5;
         const maxMana = habilidade * 5;
         const maxAcao = poder;
+        const vantagemVida = clampNumber(toFiniteInt(item.vantagemVida, 0), 0, 99);
+        const vantagemMana = clampNumber(toFiniteInt(item.vantagemMana, 0), 0, 99);
+        const vantagemAcao = clampNumber(toFiniteInt(item.vantagemAcao, 0), 0, 99);
+        const maxVidaTotal = maxVida + vantagemVida * RESOURCE_BONUS.vida;
+        const maxManaTotal = maxMana + vantagemMana * RESOURCE_BONUS.mana;
+        const maxAcaoTotal = maxAcao + vantagemAcao * RESOURCE_BONUS.acao;
         const hasPontosVida = Object.prototype.hasOwnProperty.call(item, 'pontosVida');
         const hasPontosMana = Object.prototype.hasOwnProperty.call(item, 'pontosMana');
         const hasPontosAcao = Object.prototype.hasOwnProperty.call(item, 'pontosAcao');
@@ -1773,14 +1987,14 @@ function normalizeImportedCharacters(rawText) {
         const rawMana = parseInt(item.pontosMana, 10);
         const rawAcao = parseInt(item.pontosAcao, 10);
         const pontosVida = hasPontosVida && Number.isFinite(rawVida)
-            ? Math.max(0, Math.min(rawVida, maxVida))
-            : maxVida;
+            ? Math.max(0, Math.min(rawVida, maxVidaTotal))
+            : maxVidaTotal;
         const pontosMana = hasPontosMana && Number.isFinite(rawMana)
-            ? Math.max(0, Math.min(rawMana, maxMana))
-            : maxMana;
+            ? Math.max(0, Math.min(rawMana, maxManaTotal))
+            : maxManaTotal;
         const pontosAcao = hasPontosAcao && Number.isFinite(rawAcao)
-            ? Math.max(0, Math.min(rawAcao, maxAcao))
-            : maxAcao;
+            ? Math.max(0, Math.min(rawAcao, maxAcaoTotal))
+            : maxAcaoTotal;
 
         const entry = {
             ...item,
@@ -1794,6 +2008,9 @@ function normalizeImportedCharacters(rawText) {
             poder,
             habilidade,
             resistencia,
+            vantagemVida,
+            vantagemMana,
+            vantagemAcao,
             pontosVida,
             pontosMana,
             pontosAcao,
@@ -1805,6 +2022,9 @@ function normalizeImportedCharacters(rawText) {
                 pontosVida: hasPontosVida,
                 pontosMana: hasPontosMana,
                 pontosAcao: hasPontosAcao,
+                vantagemVida: Object.prototype.hasOwnProperty.call(item, 'vantagemVida'),
+                vantagemMana: Object.prototype.hasOwnProperty.call(item, 'vantagemMana'),
+                vantagemAcao: Object.prototype.hasOwnProperty.call(item, 'vantagemAcao'),
                 iniciativa: Object.prototype.hasOwnProperty.call(item, 'iniciativa'),
                 iniciativaOriginal: Object.prototype.hasOwnProperty.call(item, 'iniciativaOriginal'),
                 turnOrder: Object.prototype.hasOwnProperty.call(item, 'turnOrder')
@@ -2245,9 +2465,9 @@ function showDiceModal() {
     overlay.className = 'modal-overlay active';
     
     // Build character options
-    let characterOptions = '<option value="">Nenhum (rolar sem personagem)</option>';
+    let characterOptions = '<option value="">Rolar sem Personagem</option>';
     characters.forEach(char => {
-        characterOptions += `<option value="${char.id}">${char.name} (P:${char.poder} H:${char.habilidade} R:${char.resistencia})</option>`;
+        characterOptions += `<option value="${char.id}">${char.name}</option>`;
     });
     
     overlay.innerHTML = `
@@ -2259,52 +2479,42 @@ function showDiceModal() {
                     ${characterOptions}
                 </select>
             </div>
-            <div class="form-row">
-                <div id="dice-attribute-group" class="form-group" style="display: none; flex: 1;">
-                    <label>Atributo</label>
-                    <select class="modal-input" id="dice-attribute" onchange="updateDiceAttributeValue()">
-                        <option value="poder">Poder</option>
-                        <option value="habilidade">Habilidade</option>
-                        <option value="resistencia">Resistência</option>
-                    </select>
+            <div class="dice-grid">
+                <div class="form-group dice-row dice-row-dice">
+                    <div class="dice-count-selector" id="dice-count-selector" data-count="1" aria-label="Quantidade de dados">
+                        <button type="button" class="dice-count-btn selected" data-count="1" aria-label="1 dado">🎲</button>
+                        <button type="button" class="dice-count-btn" data-count="2" aria-label="2 dados">🎲</button>
+                        <button type="button" class="dice-count-btn" data-count="3" aria-label="3 dados">🎲</button>
+                    </div>
                 </div>
-                <div id="dice-manual-attribute-group" class="form-group" style="display: none; flex: 1;">
-                    <label>Atributo</label>
-                    <select class="modal-input" id="dice-manual-attribute">
-                        <option value="poder">Poder</option>
-                        <option value="habilidade">Habilidade</option>
-                        <option value="resistencia">Resistência</option>
-                    </select>
+                <div class="dice-row dice-row-controls">
+                    <div class="form-group dice-attribute-group" id="dice-attribute-group">
+                        <label>Atributo</label>
+                        <button type="button" class="dice-attribute-btn" id="dice-attribute-btn" data-attribute="poder">P</button>
+                    </div>
+                    <div class="form-group">
+                        <label>Mod. Atributo</label>
+                        <div class="dice-stepper" data-target="dice-mod-attr">
+                            <button type="button" class="dice-stepper-btn" data-action="dec">-</button>
+                            <input type="number" class="modal-input dice-stepper-value" id="dice-mod-attr" value="0" readonly>
+                            <button type="button" class="dice-stepper-btn" data-action="inc">+</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Mod. Rolagem</label>
+                        <div class="dice-stepper" data-target="dice-mod-roll">
+                            <button type="button" class="dice-stepper-btn" data-action="dec">-</button>
+                            <input type="number" class="modal-input dice-stepper-value" id="dice-mod-roll" value="0" readonly>
+                            <button type="button" class="dice-stepper-btn" data-action="inc">+</button>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group" style="flex: 1;">
-                    <label>Valor Atributo</label>
-                    <input type="number" class="modal-input" id="dice-attribute-value" placeholder="Ex: 10" min="0" value="0" readonly>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group" style="flex: 1;">
-                    <label>Qnt. Dados</label>
-                    <select class="modal-input" id="dice-count">
-                        <option value="1">1 dado</option>
-                        <option value="2">2 dados</option>
-                        <option value="3" selected>3 dados</option>
-                    </select>
-                </div>
-                <div class="form-group" style="flex: 1;">
-                    <label>Mod. Atributo</label>
-                    <input type="number" class="modal-input" id="dice-mod-attr" placeholder="Ex: +2 ou -1" value="0">
-                </div>
-                <div class="form-group" style="flex: 1;">
-                    <label>Mod. Rolagem</label>
-                    <input type="number" class="modal-input" id="dice-mod-roll" placeholder="Ex: +2 ou -1" value="0">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group" style="flex: 1;">
+                <div class="form-group dice-meta">
                     <label>Meta</label>
                     <input type="number" class="modal-input" id="dice-meta" placeholder="Ex: 15" min="1" value="">
                 </div>
             </div>
+            <input type="hidden" id="dice-attribute-value" value="0">
             <div class="modal-buttons">
                 <button class="modal-button" onclick="closeModal()">Cancelar</button>
                 <button class="modal-button primary" onclick="rollDice()">Rolar!</button>
@@ -2316,22 +2526,57 @@ function showDiceModal() {
     `;
     
     document.body.appendChild(overlay);
-    
+
     // Initialize the form state (no character selected by default)
     updateDiceCharacterStats();
+
+    const attributeBtn = overlay.querySelector('#dice-attribute-btn');
+    if (attributeBtn) {
+        attributeBtn.addEventListener('click', () => {
+            const order = ['poder', 'habilidade', 'resistencia'];
+            const current = attributeBtn.dataset.attribute || 'poder';
+            const index = order.indexOf(current);
+            const next = order[(index + 1) % order.length];
+            attributeBtn.dataset.attribute = next;
+            attributeBtn.textContent = next === 'poder' ? 'P' : (next === 'habilidade' ? 'H' : 'R');
+            updateDiceAttributeValue();
+        });
+    }
+
+    const diceSelector = overlay.querySelector('#dice-count-selector');
+    if (diceSelector) {
+        diceSelector.addEventListener('click', (event) => {
+            const button = event.target.closest('.dice-count-btn');
+            if (!button) return;
+            const count = parseInt(button.dataset.count, 10);
+            if (!Number.isFinite(count)) return;
+            diceSelector.dataset.count = String(count);
+            diceSelector.querySelectorAll('.dice-count-btn').forEach((btn) => {
+                const btnCount = parseInt(btn.dataset.count, 10);
+                btn.classList.toggle('selected', Number.isFinite(btnCount) && btnCount <= count);
+            });
+        });
+    }
+
+    const stepperButtons = overlay.querySelectorAll('.dice-stepper-btn');
+    stepperButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const stepper = button.closest('.dice-stepper');
+            if (!stepper) return;
+            const targetId = stepper.dataset.target;
+            const input = overlay.querySelector(`#${targetId}`);
+            if (!input) return;
+            const current = parseInt(input.value, 10) || 0;
+            const delta = button.dataset.action === 'inc' ? 1 : -1;
+            input.value = current + delta;
+        });
+    });
     
     // Focus first input
     const characterInput = overlay.querySelector('#dice-character');
     characterInput.focus();
     
     // Add event listener for manual attribute change
-    const manualAttributeSelect = overlay.querySelector('#dice-manual-attribute');
-    if (manualAttributeSelect) {
-        manualAttributeSelect.addEventListener('change', () => {
-            // Just update display, value stays as user entered
-        });
-    }
-    
     // Close on overlay click
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
@@ -2343,23 +2588,27 @@ function showDiceModal() {
 function updateDiceCharacterStats() {
     const characterId = document.getElementById('dice-character').value;
     const attributeGroup = document.getElementById('dice-attribute-group');
-    const manualAttributeGroup = document.getElementById('dice-manual-attribute-group');
-    const attributeValueInput = document.getElementById('dice-attribute-value');
     
     if (!characterId) {
-        // No character selected - show manual attribute selection
+        // No character selected - use Mod. Atributo as the attribute value
         attributeGroup.style.display = 'none';
-        manualAttributeGroup.style.display = 'block';
-        attributeValueInput.value = '0';
-        attributeValueInput.readOnly = false;
-        attributeValueInput.placeholder = 'Ex: 10';
+        const modal = document.querySelector('.dice-modal');
+        if (modal) {
+            modal.classList.remove('has-character');
+        }
+        const attributeValueInput = document.getElementById('dice-attribute-value');
+        if (attributeValueInput) {
+            attributeValueInput.value = '0';
+        }
         return;
     }
     
     // Character selected - show character attribute selection
     attributeGroup.style.display = 'block';
-    manualAttributeGroup.style.display = 'none';
-    attributeValueInput.readOnly = true;
+    const modal = document.querySelector('.dice-modal');
+    if (modal) {
+        modal.classList.add('has-character');
+    }
     
     // Update attribute value based on selected character and attribute
     updateDiceAttributeValue();
@@ -2367,7 +2616,6 @@ function updateDiceCharacterStats() {
 
 function updateDiceAttributeValue() {
     const characterId = document.getElementById('dice-character').value;
-    const attributeValueInput = document.getElementById('dice-attribute-value');
     
     if (!characterId) {
         // Manual mode - value is entered by user
@@ -2377,8 +2625,8 @@ function updateDiceAttributeValue() {
     const character = characters.find(c => c.id === parseInt(characterId));
     if (!character) return;
     
-    const attributeSelect = document.getElementById('dice-attribute');
-    const selectedAttribute = attributeSelect.value;
+    const attributeBtn = document.getElementById('dice-attribute-btn');
+    const selectedAttribute = attributeBtn?.dataset.attribute || 'poder';
     
     let value = 0;
     if (selectedAttribute === 'poder') {
@@ -2389,12 +2637,16 @@ function updateDiceAttributeValue() {
         value = character.resistencia || 0;
     }
     
-    attributeValueInput.value = value;
+    const attributeValueInput = document.getElementById('dice-attribute-value');
+    if (attributeValueInput) {
+        attributeValueInput.value = value;
+    }
 }
 
 function rollDice() {
-    const diceCount = parseInt(document.getElementById('dice-count').value) || 3;
-    const attributeValue = parseInt(document.getElementById('dice-attribute-value').value) || 0;
+    const diceSelector = document.getElementById('dice-count-selector');
+    const diceCount = diceSelector ? parseInt(diceSelector.dataset.count, 10) || 3 : 3;
+    const attributeValue = parseInt(document.getElementById('dice-attribute-value')?.value, 10) || 0;
     const modifierAttribute = parseInt(document.getElementById('dice-mod-attr').value) || 0;
     const modifierRoll = parseInt(document.getElementById('dice-mod-roll').value) || 0;
     const meta = parseInt(document.getElementById('dice-meta').value) || 0;
@@ -2403,8 +2655,8 @@ function rollDice() {
     const characterId = document.getElementById('dice-character').value;
     let attributeName = '';
     if (characterId) {
-        const attributeSelect = document.getElementById('dice-attribute');
-        const selectedAttribute = attributeSelect.value;
+        const attributeBtn = document.getElementById('dice-attribute-btn');
+        const selectedAttribute = attributeBtn?.dataset.attribute || 'poder';
         const attributeNames = {
             poder: 'Poder',
             habilidade: 'Habilidade',
@@ -2412,14 +2664,7 @@ function rollDice() {
         };
         attributeName = attributeNames[selectedAttribute] || 'Atributo';
     } else {
-        const manualAttributeSelect = document.getElementById('dice-manual-attribute');
-        const selectedAttribute = manualAttributeSelect.value;
-        const attributeNames = {
-            poder: 'Poder',
-            habilidade: 'Habilidade',
-            resistencia: 'Resistência'
-        };
-        attributeName = attributeNames[selectedAttribute] || 'Atributo';
+        attributeName = 'Atributo';
     }
     
     // Check if attribute value is provided
@@ -2460,7 +2705,7 @@ function rollDice() {
     let successClass = '';
     if (meta > 0) {
         if (isCriticalFailure) {
-            successStatus = 'FALHA CRÍTICA';
+            successStatus = '💀 FALHA CRÍTICA';
             successClass = 'dice-result-critical-failure';
         } else if (finalResult >= meta * 2) {
             successStatus = 'SUCESSO PERFEITO';
@@ -2499,11 +2744,6 @@ function rollDice() {
     });
     
     diceHTML += `</div>`;
-    
-    if (isCriticalFailure) {
-        diceHTML += `<div class="dice-failure-message">💀 Falha Crítica!</div>`;
-    }
-    
     diceHTML += '</div>';
     
     resultDiv.innerHTML = diceHTML;
