@@ -97,6 +97,121 @@ function normalizeStatusList(statuses) {
     return normalized;
 }
 
+const INVENTORY_RARITIES = ['comum', 'incomum', 'raro'];
+const INVENTORY_LABELS = {
+    comum: 'Comum',
+    incomum: 'Incomum',
+    raro: 'Raro'
+};
+const INVENTORY_BASE_CAPACITY = {
+    comum: 2,
+    incomum: 0,
+    raro: 0
+};
+const INVENTORY_TIER_PRESETS = [
+    {
+        level: 0,
+        label: 'Sem Inventário',
+        summary: '2 Comum',
+        capacity: { comum: 2, incomum: 0, raro: 0 }
+    },
+    {
+        level: 1,
+        label: 'Inventário 1',
+        summary: '3 Comum • 1 Incomum',
+        capacity: { comum: 3, incomum: 1, raro: 0 }
+    },
+    {
+        level: 2,
+        label: 'Inventário 2',
+        summary: '5 Comum • 2 Incomum',
+        capacity: { comum: 5, incomum: 2, raro: 0 }
+    },
+    {
+        level: 3,
+        label: 'Inventário 3',
+        summary: '5 Comum • 4 Incomum • 1 Raro',
+        capacity: { comum: 5, incomum: 4, raro: 1 }
+    }
+];
+const INVENTORY_TIER_MAP = INVENTORY_TIER_PRESETS.reduce((acc, preset) => {
+    acc[preset.level] = preset;
+    return acc;
+}, {});
+
+const clampNumber = (value, min, max) => Math.min(max, Math.max(min, value));
+
+function toFiniteInt(value, fallback = 0) {
+    const parsed = parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizeInventoryTier(value) {
+    const parsed = toFiniteInt(value, INVENTORY_TIER_PRESETS[0].level);
+    return clampNumber(parsed, INVENTORY_TIER_PRESETS[0].level, INVENTORY_TIER_PRESETS[INVENTORY_TIER_PRESETS.length - 1].level);
+}
+
+function getInventoryCapacityForTier(level) {
+    const preset = INVENTORY_TIER_MAP[level] || INVENTORY_TIER_PRESETS[0];
+    return { ...preset.capacity };
+}
+
+function inferInventoryTier(character) {
+    if (character && Number.isFinite(Number(character.inventarioNivel))) {
+        return normalizeInventoryTier(character.inventarioNivel);
+    }
+
+    const capacitySource = character?.inventarioCapacidade && typeof character.inventarioCapacidade === 'object'
+        ? character.inventarioCapacidade
+        : {};
+    const itemsSource = character?.inventario && typeof character.inventario === 'object'
+        ? character.inventario
+        : {};
+
+    const comum = Math.max(toFiniteInt(capacitySource.comum, 0), toFiniteInt(itemsSource.comum, 0));
+    const incomum = Math.max(toFiniteInt(capacitySource.incomum, 0), toFiniteInt(itemsSource.incomum, 0));
+    const raro = Math.max(toFiniteInt(capacitySource.raro, 0), toFiniteInt(itemsSource.raro, 0));
+
+    if (raro >= 1 && incomum >= 4 && comum >= 5) {
+        return 3;
+    }
+    if (incomum >= 2 && comum >= 5) {
+        return 2;
+    }
+    if (incomum >= 1 && comum >= 3) {
+        return 1;
+    }
+    return 0;
+}
+
+function normalizeInventoryItems(items, capacity) {
+    const source = items && typeof items === 'object' ? items : {};
+    return {
+        comum: clampNumber(toFiniteInt(source.comum, 0), 0, capacity.comum),
+        incomum: clampNumber(toFiniteInt(source.incomum, 0), 0, capacity.incomum),
+        raro: clampNumber(toFiniteInt(source.raro, 0), 0, capacity.raro)
+    };
+}
+
+function ensureCharacterInventory(character) {
+    const tier = inferInventoryTier(character);
+    const capacity = getInventoryCapacityForTier(tier);
+    const hasItems = character.inventario && typeof character.inventario === 'object';
+    const items = hasItems ? normalizeInventoryItems(character.inventario, capacity) : { ...capacity };
+    character.inventarioNivel = tier;
+    character.inventarioCapacidade = capacity;
+    character.inventario = items;
+}
+
+function normalizeCharacterData(character) {
+    const normalized = {
+        ...character,
+        statuses: normalizeStatusList(character.statuses)
+    };
+    ensureCharacterInventory(normalized);
+    return normalized;
+}
+
 // Load characters from JSON file
 async function loadCharacters() {
     if (loadFromLocalStorage()) {
@@ -108,10 +223,7 @@ async function loadCharacters() {
             throw new Error('Failed to load characters.json');
         }
         const jsonData = await response.json();
-        characters = jsonData.map((char) => ({
-            ...char,
-            statuses: normalizeStatusList(char.statuses)
-        }));
+        characters = jsonData.map(normalizeCharacterData);
         ensureBattlefieldPositions();
         saveCharacters(); // Sync to localStorage
         renderCharacters();
@@ -131,7 +243,7 @@ async function loadCharacters() {
                     pontosMana: 40,
                     pontosAcao: 10
                 }
-            ];
+            ].map(normalizeCharacterData);
             saveCharacters();
             renderCharacters();
         }
@@ -153,10 +265,7 @@ function loadFromLocalStorage() {
     try {
         const parsed = JSON.parse(saved);
         if (!Array.isArray(parsed)) return false;
-        characters = parsed.map((char) => ({
-            ...char,
-            statuses: normalizeStatusList(char.statuses)
-        }));
+        characters = parsed.map(normalizeCharacterData);
         ensureBattlefieldPositions();
         renderCharacters();
         return true;
@@ -258,7 +367,13 @@ function addResourceHistoryEntry(entry) {
 function getResourceLabel(type) {
     if (type === 'vida') return 'PV';
     if (type === 'mana') return 'PM';
-    return 'PA';
+    if (type === 'acao') return 'PA';
+    if (typeof type === 'string' && type.startsWith('inventario-')) {
+        const rarity = type.replace('inventario-', '');
+        const label = INVENTORY_LABELS[rarity] || rarity;
+        return `Inv ${label}`;
+    }
+    return type;
 }
 
 function getResourceActionLabel(type, delta) {
@@ -268,7 +383,13 @@ function getResourceActionLabel(type, delta) {
     if (type === 'mana') {
         return delta > 0 ? 'Restaurou PM' : 'Gastou PM';
     }
-    return delta > 0 ? 'Recuperou PA' : 'Gastou PA';
+    if (type === 'acao') {
+        return delta > 0 ? 'Recuperou PA' : 'Gastou PA';
+    }
+    if (typeof type === 'string' && type.startsWith('inventario-')) {
+        return delta > 0 ? 'Recuperou item' : 'Usou item';
+    }
+    return delta > 0 ? 'Recuperou' : 'Gastou';
 }
 
 function updateRoundIndicator() {
@@ -359,6 +480,8 @@ function renderCharacters() {
 // Create a character card element
 function createCharacterCard(character, isCurrentTurn = false) {
     const card = document.createElement('div');
+
+    ensureCharacterInventory(character);
     
     // Calculate max values
     const maxVida = character.resistencia * 5;
@@ -420,22 +543,37 @@ function createCharacterCard(character, isCurrentTurn = false) {
     
     // Check if values should be hidden
     const hiddenValues = character.hiddenValues || false;
-    
-    // Format values based on hidden flag
-    const vidaDisplay = hiddenValues ? '?' : `${character.pontosVida} / ${maxVida}`;
-    const manaDisplay = hiddenValues ? '?' : `${character.pontosMana} / ${maxMana}`;
-    const acaoDisplay = hiddenValues ? '?' : `${character.pontosAcao} / ${maxAcao}`;
-    const statsDisplay = hiddenValues ? 'P ? H ? R ?' : `P <span>${character.poder}</span> H <span>${character.habilidade}</span> R <span>${character.resistencia}</span>`;
+
+    const poderDisplay = hiddenValues ? '?' : character.poder;
+    const habilidadeDisplay = hiddenValues ? '?' : character.habilidade;
+    const resistenciaDisplay = hiddenValues ? '?' : character.resistencia;
+    const inventorySlotsHTML = buildInventorySlotsHTML(character);
     
     card.innerHTML = `
         <div class="character-header">
-            <img src="${character.avatar || DEFAULT_AVATAR}" 
-                 alt="${character.name}" 
-                 class="character-avatar"
-                 data-character-id="${character.id}"
-                 onerror="this.src='img/default_character.jpg'">
-            <div style="flex: 1;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="character-avatar-column">
+                <img src="${character.avatar || DEFAULT_AVATAR}" 
+                     alt="${character.name}" 
+                     class="character-avatar"
+                     data-character-id="${character.id}"
+                     onerror="this.src='img/default_character.jpg'">
+                <div class="character-attributes">
+                    <div class="character-attribute">
+                        <span class="character-attribute-label">Poder</span>
+                        <span class="character-attribute-value">${poderDisplay}</span>
+                    </div>
+                    <div class="character-attribute">
+                        <span class="character-attribute-label">Habilidade</span>
+                        <span class="character-attribute-value">${habilidadeDisplay}</span>
+                    </div>
+                    <div class="character-attribute">
+                        <span class="character-attribute-label">Resistência</span>
+                        <span class="character-attribute-value">${resistenciaDisplay}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="character-main">
+                <div class="character-title-row">
                     <div class="character-name">${character.name}</div>
                     <div class="character-actions">
                         <button class="edit-character-btn" onclick="showEditCharacterModal(${character.id})" title="Editar personagem">
@@ -479,9 +617,17 @@ function createCharacterCard(character, isCurrentTurn = false) {
         </div>
         <div class="character-statuses">
             <div class="status-header">
-                <button class="status-edit-link" onclick="showStatusModal(${character.id})" title="Editar status">Status</button>
+                <button class="status-edit-link" onclick="showStatusModal(${character.id})" title="Editar status">STATUS</button>
             </div>
             <div class="status-tags" data-character-id="${character.id}"></div>
+        </div>
+        <div class="character-inventory">
+            <div class="inventory-header">
+                <button class="inventory-edit-link" onclick="showInventoryModal(${character.id})" title="Editar inventário">Inventário</button>
+            </div>
+            <div class="inventory-groups" data-character-id="${character.id}">
+                ${inventorySlotsHTML}
+            </div>
         </div>
         ${combatMode ? `
         <div class="initiative-container">
@@ -495,14 +641,41 @@ function createCharacterCard(character, isCurrentTurn = false) {
                    ${preparationPhase ? '' : 'readonly'}>
         </div>
         ` : ''}
-        <div class="character-stats">
-            ${statsDisplay}
-        </div>
     `;
 
     const statusTags = card.querySelector('.status-tags');
     if (statusTags) {
         renderStatusTags(statusTags, character);
+    }
+
+    const inventoryGroups = card.querySelector('.inventory-groups');
+    if (inventoryGroups) {
+        inventoryGroups.addEventListener('click', (event) => {
+            const slot = event.target.closest('.inventory-slot');
+            if (!slot || !inventoryGroups.contains(slot)) return;
+            if (slot.classList.contains('placeholder')) return;
+
+            const isSelected = slot.classList.contains('selected');
+            inventoryGroups.querySelectorAll('.inventory-slot.selected').forEach((selected) => {
+                selected.classList.remove('selected');
+            });
+            if (!isSelected) {
+                slot.classList.add('selected');
+            }
+        });
+
+        inventoryGroups.addEventListener('dblclick', (event) => {
+            const slot = event.target.closest('.inventory-slot');
+            if (!slot || !inventoryGroups.contains(slot)) return;
+            if (slot.classList.contains('placeholder')) return;
+
+            const rarity = slot.dataset.rarity;
+            const characterId = parseInt(inventoryGroups.dataset.characterId, 10);
+            if (!rarity || !characterId) return;
+
+            const delta = slot.classList.contains('filled') ? -1 : 1;
+            adjustInventoryItem(characterId, rarity, delta);
+        });
     }
     
     // Add double-click listeners to bars
@@ -525,6 +698,62 @@ function createCharacterCard(character, isCurrentTurn = false) {
     });
     
     return card;
+}
+
+function buildInventorySlotsHTML(character) {
+    const items = character.inventario || {};
+    const capacity = character.inventarioCapacidade || INVENTORY_BASE_CAPACITY;
+    const groups = [];
+
+    INVENTORY_RARITIES.forEach((rarity) => {
+        const total = capacity[rarity] ?? 0;
+        if (total <= 0) {
+            return;
+        }
+        const filled = items[rarity] ?? 0;
+        const label = INVENTORY_LABELS[rarity];
+        let slotsHTML = '';
+
+        for (let i = 0; i < total; i += 1) {
+            const stateClass = i < filled ? 'filled' : 'empty';
+            slotsHTML += `<span class="inventory-slot ${rarity} ${stateClass}" data-rarity="${rarity}" data-filled="${i < filled ? 'true' : 'false'}" aria-hidden="true"></span>`;
+        }
+
+        groups.push(`
+            <div class="inventory-group" data-rarity="${rarity}" title="${label}: ${filled}/${total}">
+                <span class="inventory-label">${label}</span>
+                <div class="inventory-slots">${slotsHTML}</div>
+            </div>
+        `);
+    });
+
+    return groups.join('');
+}
+
+function adjustInventoryItem(characterId, rarity, delta) {
+    const character = characters.find(c => c.id === characterId);
+    if (!character || !INVENTORY_RARITIES.includes(rarity)) return;
+
+    ensureCharacterInventory(character);
+    const capacity = character.inventarioCapacidade?.[rarity] ?? 0;
+    if (capacity <= 0) return;
+
+    const before = character.inventario?.[rarity] ?? 0;
+    const after = clampNumber(before + delta, 0, capacity);
+    if (before === after) return;
+
+    character.inventario[rarity] = after;
+    addResourceHistoryEntry({
+        timestamp: Date.now(),
+        characterId: character.id,
+        characterName: character.name,
+        type: `inventario-${rarity}`,
+        delta: after - before,
+        before,
+        after
+    });
+    saveCharacters();
+    renderCharacters();
 }
 
 function renderStatusTags(container, character) {
@@ -1034,6 +1263,7 @@ function addCharacter() {
         hiddenValues: hiddenValues,
         battlefieldSection: defaultBattlefieldSection,
         statuses: [],
+        inventarioNivel: 0,
         poder: poder,
         habilidade: habilidade,
         resistencia: resistencia,
@@ -1219,6 +1449,98 @@ function showStatusModal(characterId) {
             closeModal();
         }
     });
+}
+
+function showInventoryModal(characterId) {
+    const character = characters.find(c => c.id === characterId);
+    if (!character) return;
+
+    ensureCharacterInventory(character);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay active';
+
+    const currentTier = normalizeInventoryTier(character.inventarioNivel);
+    const optionsHtml = INVENTORY_TIER_PRESETS.map((preset) => `
+        <button type="button"
+                class="inventory-tier-button ${preset.level === currentTier ? 'selected' : ''}"
+                data-tier="${preset.level}">
+            <div class="inventory-tier-main">
+                <div class="inventory-tier-title">${preset.label}</div>
+            </div>
+            <div class="inventory-tier-preview">
+                ${renderInventoryTierPreview(preset.capacity)}
+            </div>
+        </button>
+    `).join('');
+
+    overlay.innerHTML = `
+        <div class="modal inventory-modal">
+            <div class="modal-title">Inventário de ${character.name}</div>
+            <div class="modal-hint">Selecione o tier do Inventário.</div>
+            <div class="inventory-tier-options">
+                ${optionsHtml}
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-button" onclick="closeModal()">Cancelar</button>
+                <button class="modal-button primary" data-save-inventory>Salvar</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const saveBtn = overlay.querySelector('[data-save-inventory]');
+    saveBtn.addEventListener('click', () => saveInventoryTierFromModal(characterId, overlay));
+
+    overlay.querySelectorAll('.inventory-tier-button').forEach((button) => {
+        button.addEventListener('click', () => {
+            overlay.querySelectorAll('.inventory-tier-button.selected').forEach((selected) => {
+                selected.classList.remove('selected');
+            });
+            button.classList.add('selected');
+        });
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeModal();
+        }
+    });
+}
+
+function renderInventoryTierPreview(capacity) {
+    return INVENTORY_RARITIES.map((rarity) => {
+        const total = capacity[rarity] ?? 0;
+        if (!total) return '';
+        let slots = '';
+        for (let i = 0; i < total; i += 1) {
+            slots += `<span class="inventory-slot ${rarity} filled preview" aria-hidden="true"></span>`;
+        }
+        return `
+            <div class="inventory-tier-preview-group">
+                <span class="inventory-tier-preview-label">${INVENTORY_LABELS[rarity]}</span>
+                <div class="inventory-tier-preview-slots">${slots}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function saveInventoryTierFromModal(characterId, overlay) {
+    const character = characters.find(c => c.id === characterId);
+    if (!character) return;
+
+    const selected = overlay.querySelector('.inventory-tier-button.selected');
+    const tier = normalizeInventoryTier(selected ? selected.dataset.tier : 0);
+    const capacity = getInventoryCapacityForTier(tier);
+
+    character.inventarioNivel = tier;
+    character.inventarioCapacidade = capacity;
+    character.inventario = { ...capacity };
+
+    saveCharacters();
+    renderCharacters();
+    closeModal();
 }
 
 function showImportModal() {
@@ -1460,7 +1782,7 @@ function normalizeImportedCharacters(rawText) {
             ? Math.max(0, Math.min(rawAcao, maxAcao))
             : maxAcao;
 
-        normalized.push({
+        const entry = {
             ...item,
             id,
             name,
@@ -1487,7 +1809,10 @@ function normalizeImportedCharacters(rawText) {
                 iniciativaOriginal: Object.prototype.hasOwnProperty.call(item, 'iniciativaOriginal'),
                 turnOrder: Object.prototype.hasOwnProperty.call(item, 'turnOrder')
             }
-        });
+        };
+
+        ensureCharacterInventory(entry);
+        normalized.push(entry);
     });
 
     if (errors.length) {
@@ -1713,7 +2038,7 @@ function showHistoryModal() {
     overlay.innerHTML = `
         <div class="modal import-modal">
             <div class="modal-title">Histórico de Recursos</div>
-            <div class="modal-hint">Registro das alterações de PV, PM e PA.</div>
+            <div class="modal-hint">Registro das alterações de PV, PM, PA e Inventário.</div>
             ${listHtml}
             <div class="modal-buttons">
                 <button class="modal-button" onclick="closeModal()">Fechar</button>
@@ -2091,7 +2416,7 @@ function rollDice() {
     }
     
     // Check if attribute value is provided
-    if (attributeValue <= 0) {
+    if (!Number.isFinite(attributeValue)) {
         alert('Por favor, selecione um personagem e atributo ou insira um valor válido para o atributo.');
         return;
     }
@@ -2099,8 +2424,8 @@ function rollDice() {
     // Calculate final attribute value (base + modifier)
     const finalAttributeValue = attributeValue + modifier;
     
-    if (finalAttributeValue <= 0) {
-        alert('O valor final do atributo (atributo + modificador) deve ser maior que zero.');
+    if (!Number.isFinite(finalAttributeValue)) {
+        alert('O valor final do atributo (atributo + modificador) não é válido.');
         return;
     }
     
