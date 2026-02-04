@@ -407,9 +407,9 @@ h1 {
     background: var(--bg-secondary);
     border: 2px solid var(--border-color);
     border-radius: 8px;
-    padding: 10px 12px;
+    padding: 10px 20px;
     cursor: pointer;
-    font-size: 0.95em;
+    font-size: 1em;
     font-weight: 600;
     text-transform: none;
     letter-spacing: 0.02em;
@@ -2370,8 +2370,8 @@ input[type="checkbox"] {
 
 /* Dice Modal Styles */
 .dice-modal {
-    max-width: 420px;
-    padding: 15px 20px;
+    max-width: 580px;
+    padding: 20px 24px;
     max-height: 85vh;
     overflow-y: auto;
 }
@@ -2404,6 +2404,200 @@ input[type="checkbox"] {
 .dice-modal .modal-buttons {
     margin-top: 15px;
     margin-bottom: 0;
+}
+
+.dice-modal select.modal-input {
+    text-align-last: center;
+}
+
+.dice-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.dice-grid .form-group {
+    margin-bottom: 0;
+}
+
+.dice-row {
+    display: grid;
+    gap: 16px;
+}
+
+.dice-row-dice {
+    grid-template-columns: 1fr;
+    justify-items: center;
+}
+
+.dice-row-controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+    gap: 10px;
+}
+
+.dice-row-controls .form-group {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.dice-row-controls .form-group label {
+    font-size: 0.8em;
+    margin-bottom: 6px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dice-modal:not(.has-character) .dice-row-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dice-modal:not(.has-character) .dice-attribute-group {
+    display: none;
+}
+
+.dice-meta {
+    align-self: center;
+    max-width: 120px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.dice-meta label {
+    text-align: center;
+    width: 100%;
+}
+
+.dice-meta .modal-input {
+    text-align: center;
+    max-width: 80px;
+    padding: 8px 6px;
+}
+
+.dice-count-selector {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 0;
+    width: 100%;
+}
+
+.dice-count-btn {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    border: 2px solid var(--border-color);
+    background: var(--bg-secondary);
+    cursor: pointer;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    font-size: 1.6em;
+}
+
+.dice-count-btn:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.dice-count-btn.selected {
+    border-color: var(--yellow);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--yellow) 35%, transparent);
+}
+
+.dice-attribute-group {
+    display: none;
+}
+
+.dice-modal.has-character .dice-attribute-group {
+    display: block;
+}
+
+.dice-attribute-btn {
+    width: 100%;
+    height: 64px;
+    border-radius: 10px;
+    border: 2px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dice-attribute-btn:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.dice-stepper {
+    display: grid;
+    grid-template-columns: minmax(48px, 1fr) minmax(40px, 1.5fr) minmax(48px, 1fr);
+    gap: 4px;
+    align-items: center;
+    width: 100%;
+    max-width: 100%;
+}
+
+.dice-stepper-btn {
+    width: 100%;
+    min-width: 48px;
+    height: 64px;
+    border-radius: 8px;
+    border: 2px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.dice-stepper-btn:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.dice-stepper-value {
+    text-align: center;
+    font-size: 1em;
+    height: 64px;
+    min-width: 40px;
+    width: 100%;
+    padding: 0 4px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.dice-modal .modal-buttons {
+    justify-content: center;
+    gap: 14px;
+}
+
+@media (max-width: 720px) {
+    .dice-grid {
+        gap: 12px;
+    }
+
+    .dice-row-controls {
+        grid-template-columns: 1fr;
+    }
+
+    .dice-meta {
+        align-self: stretch;
+        max-width: none;
+    }
+
+    .dice-count-selector {
+        justify-content: center;
+    }
 }
 
 .dice-modal .modal-button {
@@ -2612,6 +2806,7 @@ input[type="checkbox"] {
     background: rgba(255, 85, 85, 0.2);
     border: 3px solid var(--red);
     animation: dice-critical-failure-pulse 1.5s ease-in-out infinite;
+    box-shadow: 0 0 15px rgba(255, 85, 85, 0.5);
 }
 
 .dice-meta-info {
@@ -2655,10 +2850,17 @@ input[type="checkbox"] {
 
 @keyframes dice-critical-failure-pulse {
     0%, 100% {
-        box-shadow: 0 0 10px rgba(255, 85, 85, 0.3);
+        box-shadow: 0 0 15px rgba(255, 85, 85, 0.5),
+                    0 0 30px rgba(255, 85, 85, 0.3);
+        transform: scale(1);
+        border-color: var(--red);
     }
     50% {
-        box-shadow: 0 0 20px rgba(255, 85, 85, 0.6);
+        box-shadow: 0 0 25px rgba(255, 85, 85, 0.8),
+                    0 0 50px rgba(255, 85, 85, 0.5),
+                    0 0 75px rgba(255, 85, 85, 0.3);
+        transform: scale(1.05);
+        border-color: var(--red);
     }
 }
 
