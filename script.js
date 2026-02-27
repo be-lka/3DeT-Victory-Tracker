@@ -211,6 +211,9 @@ function ensureCharacterInventory(character) {
 function normalizeCharacterData(character) {
     const normalized = {
         ...character,
+        poder: clampNumber(toFiniteInt(character.poder, 0), 0, 99),
+        habilidade: clampNumber(toFiniteInt(character.habilidade, 0), 0, 99),
+        resistencia: clampNumber(toFiniteInt(character.resistencia, 0), 0, 99),
         statuses: normalizeStatusList(character.statuses),
         vantagemVida: clampNumber(toFiniteInt(character.vantagemVida, 0), 0, 99),
         vantagemMana: clampNumber(toFiniteInt(character.vantagemMana, 0), 0, 99),
@@ -220,19 +223,25 @@ function normalizeCharacterData(character) {
     return normalized;
 }
 
+// Manual: "an attribute of 0 is 1 resource point." PV = R×5, so R=0 → 1 PV.
 function getMaxVida(character) {
     const bonus = (character.vantagemVida || 0) * RESOURCE_BONUS.vida;
-    return character.resistencia * 5 + bonus;
+    const base = (character.resistencia === 0 || character.resistencia == null) ? 1 : character.resistencia * 5;
+    return base + bonus;
 }
 
+// Manual: H=0 → 1 PM; otherwise PM = H×5.
 function getMaxMana(character) {
     const bonus = (character.vantagemMana || 0) * RESOURCE_BONUS.mana;
-    return character.habilidade * 5 + bonus;
+    const base = (character.habilidade === 0 || character.habilidade == null) ? 1 : character.habilidade * 5;
+    return base + bonus;
 }
 
+// Manual: P=0 → 1 PA; otherwise PA = P.
 function getMaxAcao(character) {
     const bonus = (character.vantagemAcao || 0) * RESOURCE_BONUS.acao;
-    return character.poder + bonus;
+    const base = (character.poder === 0 || character.poder == null) ? 1 : character.poder;
+    return base + bonus;
 }
 
 // Load characters from JSON file
@@ -567,10 +576,10 @@ function createCharacterCard(character, isCurrentTurn = false) {
     
     card.className = cardClasses;
     
-    // Calculate percentages
-    const vidaPercent = (character.pontosVida / maxVida) * 100;
-    const manaPercent = (character.pontosMana / maxMana) * 100;
-    const acaoPercent = (character.pontosAcao / maxAcao) * 100;
+    // Calculate percentages (avoid division by zero when max is 0)
+    const vidaPercent = maxVida > 0 ? (character.pontosVida / maxVida) * 100 : 0;
+    const manaPercent = maxMana > 0 ? (character.pontosMana / maxMana) * 100 : 0;
+    const acaoPercent = maxAcao > 0 ? (character.pontosAcao / maxAcao) * 100 : 0;
     
     // Check if values should be hidden
     const hiddenValues = character.hiddenValues || false;
@@ -1274,15 +1283,15 @@ function showAddCharacterModal() {
             <div class="form-row">
                 <div class="form-group">
                     <label>Poder</label>
-                    <input type="number" class="modal-input" id="char-poder" placeholder="1" min="1" value="1">
+                    <input type="number" class="modal-input" id="char-poder" placeholder="1" min="0" value="1">
                 </div>
                 <div class="form-group">
                     <label>Habilidade</label>
-                    <input type="number" class="modal-input" id="char-habilidade" placeholder="1" min="1" value="1">
+                    <input type="number" class="modal-input" id="char-habilidade" placeholder="1" min="0" value="1">
                 </div>
                 <div class="form-group">
                     <label>Resistência</label>
-                    <input type="number" class="modal-input" id="char-resistencia" placeholder="1" min="1" value="1">
+                    <input type="number" class="modal-input" id="char-resistencia" placeholder="1" min="0" value="1">
                 </div>
             </div>
             <div class="form-group">
@@ -1387,9 +1396,9 @@ function addCharacter() {
     const avatar = avatarEl.value.trim();
     const type = typeEl.value;
     const hiddenValues = hiddenEl.checked;
-    const poder = parseInt(poderEl.value) || 1;
-    const habilidade = parseInt(habilidadeEl.value) || 1;
-    const resistencia = parseInt(resistenciaEl.value) || 1;
+    const poder = clampNumber(toFiniteInt(poderEl.value, 1), 0, 99);
+    const habilidade = clampNumber(toFiniteInt(habilidadeEl.value, 1), 0, 99);
+    const resistencia = clampNumber(toFiniteInt(resistenciaEl.value, 1), 0, 99);
     const vantagemVida = clampNumber(toFiniteInt(vantagemVidaEl?.value, 0), 0, 99);
     const vantagemMana = clampNumber(toFiniteInt(vantagemManaEl?.value, 0), 0, 99);
     const vantagemAcao = clampNumber(toFiniteInt(vantagemAcaoEl?.value, 0), 0, 99);
@@ -1405,14 +1414,17 @@ function addCharacter() {
         ? Math.max(...existingIds) + 1
         : (characters.length > 0 ? characters.length + 1 : 1);
     
-    // Calculate initial values
-    const maxVida = resistencia * 5;
-    const maxMana = habilidade * 5;
-    const maxAcao = poder;
+    // Manual: attribute 0 → 1 resource point. PV = R×5, PM = H×5, PA = P.
+    const baseVida = resistencia === 0 ? 1 : resistencia * 5;
+    const baseMana = habilidade === 0 ? 1 : habilidade * 5;
+    const baseAcao = poder === 0 ? 1 : poder;
     const bonusVida = vantagemVida * RESOURCE_BONUS.vida;
     const bonusMana = vantagemMana * RESOURCE_BONUS.mana;
     const bonusAcao = vantagemAcao * RESOURCE_BONUS.acao;
-    
+    const maxVida = baseVida + bonusVida;
+    const maxMana = baseMana + bonusMana;
+    const maxAcao = baseAcao + bonusAcao;
+
     const newCharacter = {
         id: newId,
         name: name,
@@ -1428,9 +1440,9 @@ function addCharacter() {
         poder: poder,
         habilidade: habilidade,
         resistencia: resistencia,
-        pontosVida: maxVida + bonusVida,
-        pontosMana: maxMana + bonusMana,
-        pontosAcao: maxAcao + bonusAcao
+        pontosVida: maxVida,
+        pontosMana: maxMana,
+        pontosAcao: maxAcao
     };
     
     characters.push(newCharacter);
@@ -1478,15 +1490,15 @@ function showEditCharacterModal(characterId) {
             <div class="form-row">
                 <div class="form-group">
                     <label>Poder</label>
-                    <input type="number" class="modal-input" id="edit-char-poder" placeholder="10" min="1" value="${character.poder}">
+                    <input type="number" class="modal-input" id="edit-char-poder" placeholder="10" min="0" value="${character.poder}">
                 </div>
                 <div class="form-group">
                     <label>Habilidade</label>
-                    <input type="number" class="modal-input" id="edit-char-habilidade" placeholder="8" min="1" value="${character.habilidade}">
+                    <input type="number" class="modal-input" id="edit-char-habilidade" placeholder="8" min="0" value="${character.habilidade}">
                 </div>
                 <div class="form-group">
                     <label>Resistência</label>
-                    <input type="number" class="modal-input" id="edit-char-resistencia" placeholder="12" min="1" value="${character.resistencia}">
+                    <input type="number" class="modal-input" id="edit-char-resistencia" placeholder="12" min="0" value="${character.resistencia}">
                 </div>
             </div>
             <div class="form-group">
@@ -1552,9 +1564,9 @@ function updateCharacter(characterId) {
     const name = document.getElementById('edit-char-name').value.trim();
     const type = document.getElementById('edit-char-type').value;
     const hiddenValues = document.getElementById('edit-char-hidden-values').checked;
-    const poder = parseInt(document.getElementById('edit-char-poder').value, 10) || character.poder;
-    const habilidade = parseInt(document.getElementById('edit-char-habilidade').value, 10) || character.habilidade;
-    const resistencia = parseInt(document.getElementById('edit-char-resistencia').value, 10) || character.resistencia;
+    const poder = clampNumber(toFiniteInt(document.getElementById('edit-char-poder').value, character.poder), 0, 99);
+    const habilidade = clampNumber(toFiniteInt(document.getElementById('edit-char-habilidade').value, character.habilidade), 0, 99);
+    const resistencia = clampNumber(toFiniteInt(document.getElementById('edit-char-resistencia').value, character.resistencia), 0, 99);
     const vantagemVida = clampNumber(toFiniteInt(document.getElementById('edit-char-vantagem-vida').value, 0), 0, 99);
     const vantagemMana = clampNumber(toFiniteInt(document.getElementById('edit-char-vantagem-mana').value, 0), 0, 99);
     const vantagemAcao = clampNumber(toFiniteInt(document.getElementById('edit-char-vantagem-acao').value, 0), 0, 99);
@@ -1568,9 +1580,12 @@ function updateCharacter(characterId) {
     const oldMaxMana = getMaxMana(character);
     const oldMaxAcao = getMaxAcao(character);
 
-    const newMaxVida = resistencia * 5 + vantagemVida * RESOURCE_BONUS.vida;
-    const newMaxMana = habilidade * 5 + vantagemMana * RESOURCE_BONUS.mana;
-    const newMaxAcao = poder + vantagemAcao * RESOURCE_BONUS.acao;
+    const baseVida = resistencia === 0 ? 1 : resistencia * 5;
+    const baseMana = habilidade === 0 ? 1 : habilidade * 5;
+    const baseAcao = poder === 0 ? 1 : poder;
+    const newMaxVida = baseVida + vantagemVida * RESOURCE_BONUS.vida;
+    const newMaxMana = baseMana + vantagemMana * RESOURCE_BONUS.mana;
+    const newMaxAcao = baseAcao + vantagemAcao * RESOURCE_BONUS.acao;
 
     const wasFullVida = character.pontosVida >= oldMaxVida;
     const wasFullMana = character.pontosMana >= oldMaxMana;
@@ -1937,15 +1952,15 @@ function normalizeImportedCharacters(rawText) {
             errors.push(`Item ${index + 1}: nome ausente.`);
             return;
         }
-        if (!Number.isFinite(poder) || poder <= 0) {
+        if (!Number.isFinite(poder) || poder < 0) {
             errors.push(`Item ${index + 1}: poder inválido.`);
             return;
         }
-        if (!Number.isFinite(habilidade) || habilidade <= 0) {
+        if (!Number.isFinite(habilidade) || habilidade < 0) {
             errors.push(`Item ${index + 1}: habilidade inválida.`);
             return;
         }
-        if (!Number.isFinite(resistencia) || resistencia <= 0) {
+        if (!Number.isFinite(resistencia) || resistencia < 0) {
             errors.push(`Item ${index + 1}: resistência inválida.`);
             return;
         }
@@ -1970,15 +1985,15 @@ function normalizeImportedCharacters(rawText) {
             warnings.push(`Item ${index + 1}: seção de batalha inválida; ajustada para padrão.`);
         }
 
-        const maxVida = resistencia * 5;
-        const maxMana = habilidade * 5;
-        const maxAcao = poder;
+        const baseVida = resistencia === 0 ? 1 : resistencia * 5;
+        const baseMana = habilidade === 0 ? 1 : habilidade * 5;
+        const baseAcao = poder === 0 ? 1 : poder;
         const vantagemVida = clampNumber(toFiniteInt(item.vantagemVida, 0), 0, 99);
         const vantagemMana = clampNumber(toFiniteInt(item.vantagemMana, 0), 0, 99);
         const vantagemAcao = clampNumber(toFiniteInt(item.vantagemAcao, 0), 0, 99);
-        const maxVidaTotal = maxVida + vantagemVida * RESOURCE_BONUS.vida;
-        const maxManaTotal = maxMana + vantagemMana * RESOURCE_BONUS.mana;
-        const maxAcaoTotal = maxAcao + vantagemAcao * RESOURCE_BONUS.acao;
+        const maxVidaTotal = baseVida + vantagemVida * RESOURCE_BONUS.vida;
+        const maxManaTotal = baseMana + vantagemMana * RESOURCE_BONUS.mana;
+        const maxAcaoTotal = baseAcao + vantagemAcao * RESOURCE_BONUS.acao;
         const hasPontosVida = Object.prototype.hasOwnProperty.call(item, 'pontosVida');
         const hasPontosMana = Object.prototype.hasOwnProperty.call(item, 'pontosMana');
         const hasPontosAcao = Object.prototype.hasOwnProperty.call(item, 'pontosAcao');
