@@ -88,6 +88,41 @@ const STATUS_EFFECTS_MAP = STATUS_EFFECTS.reduce((acc, effect) => {
     return acc;
 }, {});
 
+const PERICIAS = [
+    { key: 'animais', label: 'Animais' },
+    { key: 'arte', label: 'Arte' },
+    { key: 'esporte', label: 'Esporte' },
+    { key: 'influencia', label: 'Influência' },
+    { key: 'luta', label: 'Luta' },
+    { key: 'manha', label: 'Manha' },
+    { key: 'maquinas', label: 'Máquinas' },
+    { key: 'medicina', label: 'Medicina' },
+    { key: 'mistica', label: 'Mística' },
+    { key: 'percepcao', label: 'Percepção' },
+    { key: 'pilotagem', label: 'Pilotagem' },
+    { key: 'saber', label: 'Saber' },
+    { key: 'sobrevivencia', label: 'Sobrevivência' }
+];
+const PERICIAS_MAP = PERICIAS.reduce((acc, pericia) => {
+    acc[pericia.key] = pericia;
+    acc[pericia.label.toLowerCase()] = pericia;
+    return acc;
+}, {});
+
+function normalizePericiasList(pericias) {
+    if (!Array.isArray(pericias)) return [];
+    const normalized = [];
+    pericias.forEach((pericia) => {
+        if (!pericia) return;
+        const key = String(pericia).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const match = PERICIAS_MAP[key] || PERICIAS_MAP[String(pericia).toLowerCase()];
+        if (match && !normalized.includes(match.key)) {
+            normalized.push(match.key);
+        }
+    });
+    return normalized;
+}
+
 function normalizeStatusList(statuses) {
     if (!Array.isArray(statuses)) return [];
     const normalized = [];
@@ -308,6 +343,7 @@ function normalizeAlternateForm(alternate, parentCharacter) {
         resistencia: Math.max(1, toFiniteInt(alternate.resistencia, 1)),
         hiddenValues: Boolean(alternate.hiddenValues),
         statuses: normalizeStatusList(alternate.statuses),
+        pericias: normalizePericiasList(alternate.pericias),
         vantagemVida: clampNumber(toFiniteInt(alternate.vantagemVida, 0), 0, 99),
         vantagemMana: clampNumber(toFiniteInt(alternate.vantagemMana, 0), 0, 99),
         vantagemAcao: clampNumber(toFiniteInt(alternate.vantagemAcao, 0), 0, 99),
@@ -328,6 +364,7 @@ function normalizeCharacterData(character) {
     const normalized = {
         ...character,
         statuses: normalizeStatusList(character.statuses),
+        pericias: normalizePericiasList(character.pericias),
         vantagemVida: clampNumber(toFiniteInt(character.vantagemVida, 0), 0, 99),
         vantagemMana: clampNumber(toFiniteInt(character.vantagemMana, 0), 0, 99),
         vantagemAcao: clampNumber(toFiniteInt(character.vantagemAcao, 0), 0, 99)
@@ -765,10 +802,12 @@ function buildCharacterFaceHTML(character, formKey, isCurrentTurn = false) {
             </div>
         </div>
         <div class="character-statuses">
-            <div class="status-header">
+            <div class="status-header meta-header-row">
                 <button class="status-edit-link" onclick="showStatusModal(${character.id}, '${formKey}')" title="Editar status">STATUS</button>
+                <button class="pericias-edit-link" onclick="showPericiasModal(${character.id}, '${formKey}')" title="Editar perícias">PERÍCIAS</button>
             </div>
             <div class="status-tags" data-character-id="${character.id}" data-form="${formKey}"></div>
+            <div class="pericia-tags" data-character-id="${character.id}" data-form="${formKey}"></div>
         </div>
         <div class="character-inventory">
             <div class="inventory-header">
@@ -798,6 +837,12 @@ function attachCharacterFaceListeners(card, character) {
         const formKey = statusTags.dataset.form || ACTIVE_FORM_PRIMARY;
         const formState = getFormState(character, formKey);
         renderStatusTags(statusTags, formState);
+    });
+
+    card.querySelectorAll('.pericia-tags').forEach((periciaTags) => {
+        const formKey = periciaTags.dataset.form || ACTIVE_FORM_PRIMARY;
+        const formState = getFormState(character, formKey);
+        renderPericiaTags(periciaTags, formState);
     });
 
     card.querySelectorAll('.inventory-groups').forEach((inventoryGroups) => {
@@ -1042,6 +1087,92 @@ function renderStatusTags(container, character) {
         tooltip.textContent = effect.description;
         tag.appendChild(tooltip);
         container.appendChild(tag);
+    });
+}
+
+function renderPericiaTags(container, character) {
+    container.innerHTML = '';
+    const pericias = normalizePericiasList(character.pericias);
+
+    if (!pericias.length) {
+        const empty = document.createElement('span');
+        empty.className = 'pericia-tags-empty';
+        empty.textContent = '—';
+        empty.title = 'Nenhuma perícia — clique em PERÍCIAS para adicionar';
+        container.appendChild(empty);
+        return;
+    }
+
+    pericias.forEach((periciaKey) => {
+        const pericia = PERICIAS_MAP[periciaKey];
+        if (!pericia) return;
+        const tag = document.createElement('span');
+        tag.className = 'pericia-tag';
+        tag.textContent = pericia.label;
+        container.appendChild(tag);
+    });
+}
+
+function showPericiasModal(characterId, formKey) {
+    const character = characters.find(c => c.id === characterId);
+    if (!character) return;
+
+    const activeFormKey = formKey || getActiveFormKey(character);
+    const formState = getFormState(character, activeFormKey);
+    const currentPericias = new Set(normalizePericiasList(formState.pericias));
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay active';
+    overlay.dataset.formKey = activeFormKey;
+
+    const optionsHtml = PERICIAS.map((pericia) => `
+        <label class="pericia-option">
+            <input type="checkbox" class="pericia-option-input" name="pericia-option" value="${pericia.key}" ${currentPericias.has(pericia.key) ? 'checked' : ''}>
+            <span class="pericia-option-label">${pericia.label}</span>
+        </label>
+    `).join('');
+
+    overlay.innerHTML = `
+        <div class="modal pericias-modal">
+            <div class="modal-title">Perícias de ${formState.name}</div>
+            <div class="modal-hint">Marque todas as perícias que o personagem possui.</div>
+            <div class="pericias-modal-actions">
+                <button type="button" class="pericias-bulk-btn" data-action="all">Marcar todas</button>
+                <button type="button" class="pericias-bulk-btn" data-action="none">Limpar</button>
+            </div>
+            <div class="pericias-options">
+                ${optionsHtml}
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-button" onclick="closeModal()">Cancelar</button>
+                <button class="modal-button primary" id="save-pericias">Salvar</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelectorAll('.pericias-bulk-btn').forEach((button) => {
+        button.addEventListener('click', () => {
+            const checkAll = button.dataset.action === 'all';
+            overlay.querySelectorAll('input[name="pericia-option"]').forEach((input) => {
+                input.checked = checkAll;
+            });
+        });
+    });
+
+    const saveBtn = overlay.querySelector('#save-pericias');
+    saveBtn.addEventListener('click', () => {
+        const selected = Array.from(overlay.querySelectorAll('input[name="pericia-option"]:checked')).map((input) => input.value);
+        formState.pericias = normalizePericiasList(selected);
+        saveCharacters();
+        renderCharacters();
+        closeModal();
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeModal();
+        }
     });
 }
 
@@ -3235,6 +3366,7 @@ window.updateDiceCharacterStats = updateDiceCharacterStats;
 window.updateDiceAttributeValue = updateDiceAttributeValue;
 window.toggleCharacterForm = toggleCharacterForm;
 window.showInventoryModal = showInventoryModal;
+window.showPericiasModal = showPericiasModal;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {

@@ -1830,6 +1830,13 @@ h1 {
     margin-bottom: 8px;
 }
 
+.meta-header-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
 .status-edit-link {
     border: none;
     background: transparent;
@@ -1856,6 +1863,120 @@ h1 {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+}
+
+.pericias-edit-link {
+    border: none;
+    background: transparent;
+    color: var(--orange);
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    font-family: 'Inter', 'Atkinson Hyperlegible', 'Recursive', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.pericias-edit-link:hover {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+}
+
+.pericia-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-height: 22px;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.pericia-tags-empty {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    line-height: 1;
+}
+
+.pericia-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(139, 233, 253, 0.35);
+    background: rgba(139, 233, 253, 0.12);
+    color: var(--text-primary);
+    font-size: 0.72em;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+[data-theme="light"] .pericia-tag {
+    border-color: rgba(46, 125, 138, 0.35);
+    background: rgba(46, 125, 138, 0.1);
+}
+
+.pericias-modal .pericias-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.pericia-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.92em;
+    color: var(--text-primary);
+}
+
+.pericia-option-input {
+    width: auto;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.pericia-option-label {
+    line-height: 1.2;
+}
+
+.pericias-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.pericias-bulk-btn {
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    font-size: 0.8em;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.pericias-bulk-btn:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
+@media (max-width: 480px) {
+    .pericias-modal .pericias-options {
+        grid-template-columns: 1fr;
+    }
 }
 
 .character-inventory {
