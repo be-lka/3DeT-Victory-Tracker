@@ -2110,14 +2110,61 @@ h1 {
     position: relative;
     padding: 4px 10px;
     border-radius: 999px;
-    border: 1px solid var(--border-color);
-    background: var(--bg-primary);
-    color: var(--text-primary);
+    border: 1px solid rgba(255, 85, 85, 0.55);
+    background: linear-gradient(
+        180deg,
+        rgba(255, 85, 85, 0.38) 0%,
+        rgba(255, 85, 85, 0.22) 100%
+    );
+    color: #fff;
     font-size: 0.72em;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     font-weight: 600;
-    cursor: default;
+    cursor: pointer;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        0 0 0 1px rgba(255, 85, 85, 0.15);
+    transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-theme="light"] .status-tag {
+    border-color: rgba(229, 72, 77, 0.5);
+    background: linear-gradient(
+        180deg,
+        rgba(229, 72, 77, 0.28) 0%,
+        rgba(229, 72, 77, 0.16) 100%
+    );
+    color: #6b1215;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.5),
+        0 0 0 1px rgba(229, 72, 77, 0.12);
+}
+
+.status-tag:hover {
+    background: linear-gradient(
+        180deg,
+        rgba(255, 85, 85, 0.5) 0%,
+        rgba(255, 85, 85, 0.32) 100%
+    );
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        0 0 10px rgba(255, 85, 85, 0.35);
+}
+
+[data-theme="light"] .status-tag:hover {
+    background: linear-gradient(
+        180deg,
+        rgba(229, 72, 77, 0.38) 0%,
+        rgba(229, 72, 77, 0.24) 100%
+    );
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.6),
+        0 0 8px rgba(229, 72, 77, 0.25);
+}
+
+.status-tag:active {
+    transform: scale(0.96);
 }
 
 .status-empty {

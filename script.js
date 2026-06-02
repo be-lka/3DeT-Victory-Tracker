@@ -837,6 +837,19 @@ function attachCharacterFaceListeners(card, character) {
         const formKey = statusTags.dataset.form || ACTIVE_FORM_PRIMARY;
         const formState = getFormState(character, formKey);
         renderStatusTags(statusTags, formState);
+
+        statusTags.addEventListener('dblclick', (event) => {
+            const tag = event.target.closest('.status-tag');
+            if (!tag || !statusTags.contains(tag)) return;
+            event.preventDefault();
+            event.stopPropagation();
+
+            const statusKey = tag.dataset.statusKey;
+            const characterId = parseInt(statusTags.dataset.characterId, 10);
+            if (!statusKey || !characterId) return;
+
+            removeStatusEffect(characterId, statusKey, formKey);
+        });
     });
 
     card.querySelectorAll('.pericia-tags').forEach((periciaTags) => {
@@ -1081,13 +1094,32 @@ function renderStatusTags(container, character) {
         if (!effect) return;
         const tag = document.createElement('span');
         tag.className = 'status-tag';
+        tag.dataset.statusKey = statusKey;
+        tag.title = 'Duplo clique para resolver';
+        tag.setAttribute('role', 'button');
+        tag.setAttribute('tabindex', '0');
         tag.textContent = effect.label;
         const tooltip = document.createElement('span');
         tooltip.className = 'status-tooltip';
-        tooltip.textContent = effect.description;
+        tooltip.textContent = `${effect.description} (duplo clique para remover)`;
         tag.appendChild(tooltip);
         container.appendChild(tag);
     });
+}
+
+function removeStatusEffect(characterId, statusKey, formKey) {
+    const character = characters.find((c) => c.id === characterId);
+    if (!character || !statusKey) return;
+
+    const activeFormKey = formKey || getActiveFormKey(character);
+    const formState = getFormState(character, activeFormKey);
+    const statuses = normalizeStatusList(formState.statuses);
+    const next = statuses.filter((key) => key !== statusKey);
+    if (next.length === statuses.length) return;
+
+    formState.statuses = next;
+    saveCharacters();
+    renderCharacters();
 }
 
 function renderPericiaTags(container, character) {
