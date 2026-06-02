@@ -963,6 +963,164 @@ h1 {
     box-shadow: 0 6px 12px var(--shadow);
 }
 
+.character-card.has-alternate-form:hover {
+    transform: none;
+}
+
+.character-card.has-alternate-form .card-flip-scene:hover {
+    transform: translateY(-2px);
+}
+
+.character-card-toolbar {
+    position: relative;
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 12px;
+    z-index: 12;
+}
+
+.form-flip-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 2px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-recursive);
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.form-flip-btn:hover,
+.form-flip-btn:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px var(--shadow);
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.form-flip-icon {
+    font-size: 1.1em;
+    line-height: 1;
+}
+
+.form-flip-label {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.alternate-form-preview {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: min(280px, calc(100vw - 48px));
+    padding: 14px;
+    border-radius: 12px;
+    border: 2px solid var(--border-color);
+    background: var(--bg-secondary);
+    box-shadow: 0 12px 28px var(--shadow);
+    z-index: 30;
+    pointer-events: none;
+}
+
+.alternate-form-preview-title {
+    font-size: 1em;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+.alternate-form-preview-attributes,
+.alternate-form-preview-resources {
+    display: grid;
+    gap: 6px;
+}
+
+.alternate-form-preview-attributes div,
+.alternate-form-preview-resources div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.85em;
+    font-family: var(--font-recursive);
+}
+
+.alternate-form-preview-attributes span,
+.alternate-form-preview-resources span {
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.72em;
+}
+
+.alternate-form-preview-attributes strong,
+.alternate-form-preview-resources strong {
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.card-flip-scene {
+    perspective: 1200px;
+    transition: transform 0.2s ease;
+}
+
+.card-flip-inner {
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.65s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+
+.card-flip-inner.is-flipped {
+    transform: rotateY(180deg);
+}
+
+.card-face {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.card-face--back {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    transform: rotateY(180deg);
+}
+
+.alternate-form-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.alternate-form-fields {
+    margin-top: 12px;
+    padding: 14px;
+    border: 1px dashed var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-primary);
+}
+
+.alternate-form-heading {
+    font-size: 0.95em;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+.edit-character-modal {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
 /* Character type styling */
 .character-card.character-enemy {
     background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(255, 85, 85, 0.15) 100%);

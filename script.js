@@ -208,6 +208,122 @@ function ensureCharacterInventory(character) {
     character.inventario = items;
 }
 
+const ACTIVE_FORM_PRIMARY = 'primary';
+const ACTIVE_FORM_ALTERNATE = 'alternate';
+
+function hasAlternateForm(character) {
+    return Boolean(character?.alternateForm?.name?.trim());
+}
+
+function getActiveFormKey(character) {
+    if (!hasAlternateForm(character)) {
+        return ACTIVE_FORM_PRIMARY;
+    }
+    return character.activeForm === ACTIVE_FORM_ALTERNATE
+        ? ACTIVE_FORM_ALTERNATE
+        : ACTIVE_FORM_PRIMARY;
+}
+
+function getFormState(character, formKey = getActiveFormKey(character)) {
+    if (formKey === ACTIVE_FORM_ALTERNATE && hasAlternateForm(character)) {
+        return character.alternateForm;
+    }
+    return character;
+}
+
+function getFormDisplayName(character, formKey = getActiveFormKey(character)) {
+    return getFormState(character, formKey).name || character.name;
+}
+
+function getEffectiveHabilidade(parentCharacter, formState) {
+    if (formState?.inheritHabilidade && parentCharacter) {
+        return parentCharacter.habilidade;
+    }
+    return formState?.habilidade ?? parentCharacter?.habilidade ?? 1;
+}
+
+function getFormHiddenValues(character, formKey) {
+    const state = getFormState(character, formKey);
+    if (formKey === ACTIVE_FORM_ALTERNATE && Object.prototype.hasOwnProperty.call(state, 'hiddenValues')) {
+        return Boolean(state.hiddenValues);
+    }
+    return Boolean(character.hiddenValues);
+}
+
+function getMaxVidaForState(state, parentCharacter) {
+    const bonus = (state.vantagemVida || 0) * RESOURCE_BONUS.vida;
+    return state.resistencia * 5 + bonus;
+}
+
+function getMaxManaForState(state, parentCharacter) {
+    const habilidade = getEffectiveHabilidade(parentCharacter, state);
+    const bonus = (state.vantagemMana || 0) * RESOURCE_BONUS.mana;
+    return habilidade * 5 + bonus;
+}
+
+function getMaxAcaoForState(state) {
+    const bonus = (state.vantagemAcao || 0) * RESOURCE_BONUS.acao;
+    return state.poder + bonus;
+}
+
+function ensureFormResources(character, formKey) {
+    const state = getFormState(character, formKey);
+    const maxVida = getMaxVidaForState(state, character);
+    const maxMana = getMaxManaForState(state, character);
+    const maxAcao = getMaxAcaoForState(state);
+
+    if (state.pontosVida === undefined || state.pontosVida === null) {
+        state.pontosVida = maxVida;
+    } else {
+        state.pontosVida = Math.max(0, Math.min(state.pontosVida, maxVida));
+    }
+
+    if (state.pontosMana === undefined || state.pontosMana === null) {
+        state.pontosMana = maxMana;
+    } else {
+        state.pontosMana = Math.max(0, Math.min(state.pontosMana, maxMana));
+    }
+
+    if (state.pontosAcao === undefined || state.pontosAcao === null) {
+        state.pontosAcao = maxAcao;
+    } else {
+        state.pontosAcao = Math.max(0, Math.min(state.pontosAcao, maxAcao));
+    }
+}
+
+function normalizeAlternateForm(alternate, parentCharacter) {
+    if (!alternate || !String(alternate.name || '').trim()) {
+        return null;
+    }
+
+    const inheritHabilidade = Boolean(alternate.inheritHabilidade);
+    const normalized = {
+        name: String(alternate.name).trim(),
+        avatar: alternate.avatar || DEFAULT_AVATAR,
+        inheritHabilidade,
+        poder: Math.max(1, toFiniteInt(alternate.poder, 1)),
+        habilidade: inheritHabilidade
+            ? null
+            : Math.max(1, toFiniteInt(alternate.habilidade, parentCharacter?.habilidade || 1)),
+        resistencia: Math.max(1, toFiniteInt(alternate.resistencia, 1)),
+        hiddenValues: Boolean(alternate.hiddenValues),
+        statuses: normalizeStatusList(alternate.statuses),
+        vantagemVida: clampNumber(toFiniteInt(alternate.vantagemVida, 0), 0, 99),
+        vantagemMana: clampNumber(toFiniteInt(alternate.vantagemMana, 0), 0, 99),
+        vantagemAcao: clampNumber(toFiniteInt(alternate.vantagemAcao, 0), 0, 99),
+        pontosVida: alternate.pontosVida,
+        pontosMana: alternate.pontosMana,
+        pontosAcao: alternate.pontosAcao,
+        inventarioNivel: alternate.inventarioNivel,
+        inventario: alternate.inventario,
+        inventarioCapacidade: alternate.inventarioCapacidade
+    };
+
+    ensureCharacterInventory(normalized);
+    ensureFormResources({ ...parentCharacter, alternateForm: normalized }, ACTIVE_FORM_ALTERNATE);
+    return normalized;
+}
+
 function normalizeCharacterData(character) {
     const normalized = {
         ...character,
@@ -216,23 +332,43 @@ function normalizeCharacterData(character) {
         vantagemMana: clampNumber(toFiniteInt(character.vantagemMana, 0), 0, 99),
         vantagemAcao: clampNumber(toFiniteInt(character.vantagemAcao, 0), 0, 99)
     };
+
+    if (character.alternateForm) {
+        const alternateForm = normalizeAlternateForm(character.alternateForm, normalized);
+        if (alternateForm) {
+            normalized.alternateForm = alternateForm;
+            if (normalized.activeForm === ACTIVE_FORM_ALTERNATE) {
+                normalized.activeForm = ACTIVE_FORM_ALTERNATE;
+            } else {
+                normalized.activeForm = ACTIVE_FORM_PRIMARY;
+            }
+        } else {
+            delete normalized.alternateForm;
+            delete normalized.activeForm;
+        }
+    } else {
+        delete normalized.alternateForm;
+        delete normalized.activeForm;
+    }
+
     ensureCharacterInventory(normalized);
+    ensureFormResources(normalized, ACTIVE_FORM_PRIMARY);
     return normalized;
 }
 
 function getMaxVida(character) {
-    const bonus = (character.vantagemVida || 0) * RESOURCE_BONUS.vida;
-    return character.resistencia * 5 + bonus;
+    const state = getFormState(character);
+    return getMaxVidaForState(state, character);
 }
 
 function getMaxMana(character) {
-    const bonus = (character.vantagemMana || 0) * RESOURCE_BONUS.mana;
-    return character.habilidade * 5 + bonus;
+    const state = getFormState(character);
+    return getMaxManaForState(state, character);
 }
 
 function getMaxAcao(character) {
-    const bonus = (character.vantagemAcao || 0) * RESOURCE_BONUS.acao;
-    return character.poder + bonus;
+    const state = getFormState(character);
+    return getMaxAcaoForState(state);
 }
 
 // Load characters from JSON file
@@ -508,85 +644,65 @@ function renderCharacters() {
     renderBattlefield(sortedCharacters);
 }
 
-// Create a character card element
-function createCharacterCard(character, isCurrentTurn = false) {
-    const card = document.createElement('div');
+function buildAlternateFormPreviewHTML(character, previewFormKey) {
+    const state = getFormState(character, previewFormKey);
+    ensureFormResources(character, previewFormKey);
 
-    ensureCharacterInventory(character);
-    
-    // Calculate max values
-    const maxVida = getMaxVida(character);
-    const maxMana = getMaxMana(character);
-    const maxAcao = getMaxAcao(character);
-    
-    // Ensure current values don't exceed max (but allow 0 values)
-    // Use explicit checks to only default if value is null or undefined (not 0)
-    if (character.pontosVida === undefined || character.pontosVida === null) {
-        character.pontosVida = maxVida;
-    } else {
-        character.pontosVida = Math.max(0, Math.min(character.pontosVida, maxVida));
-    }
-    
-    if (character.pontosMana === undefined || character.pontosMana === null) {
-        character.pontosMana = maxMana;
-    } else {
-        character.pontosMana = Math.max(0, Math.min(character.pontosMana, maxMana));
-    }
-    
-    if (character.pontosAcao === undefined || character.pontosAcao === null) {
-        character.pontosAcao = maxAcao;
-    } else {
-        character.pontosAcao = Math.max(0, Math.min(character.pontosAcao, maxAcao));
-    }
-    
-    // Check if character is "Perto da Morte" (pontosVida <= resistencia)
-    const isPertoDaMorte = character.pontosVida <= character.resistencia;
-    
-    // Determine character type (default to 'player' if not set)
-    const characterType = character.type || 'player';
-    let cardClasses = 'character-card';
-    
-    // Add type-based class
-    if (characterType === 'enemy') {
-        cardClasses += ' character-enemy';
-    } else if (characterType === 'friendly') {
-        cardClasses += ' character-friendly';
-    } else if (characterType === 'neutral') {
-        cardClasses += ' character-neutral';
-    }
-    
-    // Add "Perto da Morte" class if applicable
-    if (isPertoDaMorte) {
-        cardClasses += ' perto-da-morte';
-    }
-    
-    // Add current turn glow if applicable
-    if (isCurrentTurn) {
-        cardClasses += ' current-turn';
-    }
-    
-    card.className = cardClasses;
-    
-    // Calculate percentages
-    const vidaPercent = (character.pontosVida / maxVida) * 100;
-    const manaPercent = (character.pontosMana / maxMana) * 100;
-    const acaoPercent = (character.pontosAcao / maxAcao) * 100;
-    
-    // Check if values should be hidden
-    const hiddenValues = character.hiddenValues || false;
+    const hiddenValues = getFormHiddenValues(character, previewFormKey);
+    const maxVida = getMaxVidaForState(state, character);
+    const maxMana = getMaxManaForState(state, character);
+    const maxAcao = getMaxAcaoForState(state);
+    const habilidadeLabel = state.inheritHabilidade ? 'Habilidade (piloto)' : 'Habilidade';
+    const poderDisplay = hiddenValues ? '?' : state.poder;
+    const habilidadeDisplay = hiddenValues ? '?' : getEffectiveHabilidade(character, state);
+    const resistenciaDisplay = hiddenValues ? '?' : state.resistencia;
+    const vidaDisplay = hiddenValues ? '? / ?' : `${state.pontosVida} / ${maxVida}`;
+    const manaDisplay = hiddenValues ? '? / ?' : `${state.pontosMana} / ${maxMana}`;
+    const acaoDisplay = hiddenValues ? '? / ?' : `${state.pontosAcao} / ${maxAcao}`;
 
-    const poderDisplay = hiddenValues ? '?' : character.poder;
-    const habilidadeDisplay = hiddenValues ? '?' : character.habilidade;
-    const resistenciaDisplay = hiddenValues ? '?' : character.resistencia;
-    const inventorySlotsHTML = buildInventorySlotsHTML(character);
-    
-    card.innerHTML = `
+    return `
+        <div class="alternate-form-preview-title">${state.name}</div>
+        <div class="alternate-form-preview-attributes">
+            <div><span>Poder</span><strong>${poderDisplay}</strong></div>
+            <div><span>${habilidadeLabel}</span><strong>${habilidadeDisplay}</strong></div>
+            <div><span>Resistência</span><strong>${resistenciaDisplay}</strong></div>
+        </div>
+        <div class="alternate-form-preview-resources">
+            <div><span>PV</span><strong>${vidaDisplay}</strong></div>
+            <div><span>PM</span><strong>${manaDisplay}</strong></div>
+            <div><span>PA</span><strong>${acaoDisplay}</strong></div>
+        </div>
+    `;
+}
+
+function buildCharacterFaceHTML(character, formKey, isCurrentTurn = false) {
+    ensureFormResources(character, formKey);
+    const formState = getFormState(character, formKey);
+    ensureCharacterInventory(formState);
+
+    const maxVida = getMaxVidaForState(formState, character);
+    const maxMana = getMaxManaForState(formState, character);
+    const maxAcao = getMaxAcaoForState(formState);
+
+    const hiddenValues = getFormHiddenValues(character, formKey);
+    const habilidadeLabel = formState.inheritHabilidade ? 'Habilidade (piloto)' : 'Habilidade';
+    const poderDisplay = hiddenValues ? '?' : formState.poder;
+    const habilidadeDisplay = hiddenValues ? '?' : getEffectiveHabilidade(character, formState);
+    const resistenciaDisplay = hiddenValues ? '?' : formState.resistencia;
+
+    const vidaPercent = maxVida > 0 ? (formState.pontosVida / maxVida) * 100 : 0;
+    const manaPercent = maxMana > 0 ? (formState.pontosMana / maxMana) * 100 : 0;
+    const acaoPercent = maxAcao > 0 ? (formState.pontosAcao / maxAcao) * 100 : 0;
+    const inventorySlotsHTML = buildInventorySlotsHTML(formState);
+
+    return `
         <div class="character-header">
             <div class="character-avatar-column">
-                <img src="${character.avatar || DEFAULT_AVATAR}" 
-                     alt="${character.name}" 
+                <img src="${formState.avatar || DEFAULT_AVATAR}"
+                     alt="${formState.name}"
                      class="character-avatar"
                      data-character-id="${character.id}"
+                     data-form="${formKey}"
                      onerror="this.src='img/default_character.jpg'">
                 <div class="character-attributes">
                     <div class="character-attribute">
@@ -594,7 +710,7 @@ function createCharacterCard(character, isCurrentTurn = false) {
                         <span class="character-attribute-value">${poderDisplay}</span>
                     </div>
                     <div class="character-attribute">
-                        <span class="character-attribute-label">Habilidade</span>
+                        <span class="character-attribute-label">${habilidadeLabel}</span>
                         <span class="character-attribute-value">${habilidadeDisplay}</span>
                     </div>
                     <div class="character-attribute">
@@ -605,42 +721,44 @@ function createCharacterCard(character, isCurrentTurn = false) {
             </div>
             <div class="character-main">
                 <div class="character-title-row">
-                    <div class="character-name">${character.name}</div>
+                    <div class="character-name">${formState.name}</div>
                     <div class="character-actions">
                         <button class="edit-character-btn" onclick="showEditCharacterModal(${character.id})" title="Editar personagem">
                             ✏️
                         </button>
+                        ${formKey === ACTIVE_FORM_PRIMARY ? `
                         <button class="delete-character-btn" onclick="deleteCharacter(${character.id})" title="Remover personagem">
                             🗑️
                         </button>
+                        ` : ''}
                     </div>
                 </div>
                 <div class="status-bars">
                     <div class="status-bar-container">
-                    <div class="status-bar-label">
+                        <div class="status-bar-label">
                             <span>Pontos de Vida</span>
-                    </div>
-                        <div class="status-bar" data-character-id="${character.id}" data-type="vida" data-max="${maxVida}">
+                        </div>
+                        <div class="status-bar" data-character-id="${character.id}" data-form="${formKey}" data-type="vida" data-max="${maxVida}">
                             <div class="status-bar-fill health" style="width: ${vidaPercent}%"></div>
-                            ${hiddenValues ? '' : `<span class="status-bar-value health-value">${character.pontosVida} / ${maxVida}</span>`}
+                            ${hiddenValues ? '' : `<span class="status-bar-value health-value">${formState.pontosVida} / ${maxVida}</span>`}
                         </div>
                     </div>
                     <div class="status-bar-container">
-                    <div class="status-bar-label">
+                        <div class="status-bar-label">
                             <span>Pontos de Mana</span>
-                    </div>
-                        <div class="status-bar" data-character-id="${character.id}" data-type="mana" data-max="${maxMana}">
+                        </div>
+                        <div class="status-bar" data-character-id="${character.id}" data-form="${formKey}" data-type="mana" data-max="${maxMana}">
                             <div class="status-bar-fill mana" style="width: ${manaPercent}%"></div>
-                            ${hiddenValues ? '' : `<span class="status-bar-value mana-value">${character.pontosMana} / ${maxMana}</span>`}
+                            ${hiddenValues ? '' : `<span class="status-bar-value mana-value">${formState.pontosMana} / ${maxMana}</span>`}
                         </div>
                     </div>
                     <div class="status-bar-container">
-                    <div class="status-bar-label">
+                        <div class="status-bar-label">
                             <span>Pontos de Ação</span>
-                    </div>
-                        <div class="status-bar" data-character-id="${character.id}" data-type="acao" data-max="${maxAcao}">
+                        </div>
+                        <div class="status-bar" data-character-id="${character.id}" data-form="${formKey}" data-type="acao" data-max="${maxAcao}">
                             <div class="status-bar-fill action" style="width: ${acaoPercent}%"></div>
-                            ${hiddenValues ? '' : `<span class="status-bar-value action-value">${character.pontosAcao} / ${maxAcao}</span>`}
+                            ${hiddenValues ? '' : `<span class="status-bar-value action-value">${formState.pontosAcao} / ${maxAcao}</span>`}
                         </div>
                     </div>
                 </div>
@@ -648,24 +766,24 @@ function createCharacterCard(character, isCurrentTurn = false) {
         </div>
         <div class="character-statuses">
             <div class="status-header">
-                <button class="status-edit-link" onclick="showStatusModal(${character.id})" title="Editar status">STATUS</button>
+                <button class="status-edit-link" onclick="showStatusModal(${character.id}, '${formKey}')" title="Editar status">STATUS</button>
             </div>
-            <div class="status-tags" data-character-id="${character.id}"></div>
+            <div class="status-tags" data-character-id="${character.id}" data-form="${formKey}"></div>
         </div>
         <div class="character-inventory">
             <div class="inventory-header">
-                <button class="inventory-edit-link" onclick="showInventoryModal(${character.id})" title="Editar inventário">Inventário</button>
+                <button class="inventory-edit-link" onclick="showInventoryModal(${character.id}, '${formKey}')" title="Editar inventário">Inventário</button>
             </div>
-            <div class="inventory-groups" data-character-id="${character.id}">
+            <div class="inventory-groups" data-character-id="${character.id}" data-form="${formKey}">
                 ${inventorySlotsHTML}
             </div>
         </div>
-        ${combatMode ? `
+        ${combatMode && formKey === ACTIVE_FORM_PRIMARY ? `
         <div class="initiative-container">
             <label>Iniciativa:</label>
-            <input type="number" 
-                   class="initiative-input" 
-                   value="${character.iniciativa || ''}" 
+            <input type="number"
+                   class="initiative-input"
+                   value="${character.iniciativa || ''}"
                    data-character-id="${character.id}"
                    onchange="updateInitiative(${character.id}, this.value)"
                    placeholder="0"
@@ -673,14 +791,16 @@ function createCharacterCard(character, isCurrentTurn = false) {
         </div>
         ` : ''}
     `;
+}
 
-    const statusTags = card.querySelector('.status-tags');
-    if (statusTags) {
-        renderStatusTags(statusTags, character);
-    }
+function attachCharacterFaceListeners(card, character) {
+    card.querySelectorAll('.status-tags').forEach((statusTags) => {
+        const formKey = statusTags.dataset.form || ACTIVE_FORM_PRIMARY;
+        const formState = getFormState(character, formKey);
+        renderStatusTags(statusTags, formState);
+    });
 
-    const inventoryGroups = card.querySelector('.inventory-groups');
-    if (inventoryGroups) {
+    card.querySelectorAll('.inventory-groups').forEach((inventoryGroups) => {
         inventoryGroups.addEventListener('click', (event) => {
             const slot = event.target.closest('.inventory-slot');
             if (!slot || !inventoryGroups.contains(slot)) return;
@@ -702,32 +822,146 @@ function createCharacterCard(character, isCurrentTurn = false) {
 
             const rarity = slot.dataset.rarity;
             const characterId = parseInt(inventoryGroups.dataset.characterId, 10);
+            const formKey = inventoryGroups.dataset.form || getActiveFormKey(character);
             if (!rarity || !characterId) return;
 
             const delta = slot.classList.contains('filled') ? -1 : 1;
-            adjustInventoryItem(characterId, rarity, delta);
+            adjustInventoryItem(characterId, rarity, delta, formKey);
         });
-    }
-    
-    // Add double-click listeners to bars
-    const bars = card.querySelectorAll('.status-bar');
-    bars.forEach(bar => {
+    });
+
+    card.querySelectorAll('.status-bar').forEach((bar) => {
         bar.addEventListener('dblclick', (e) => {
             e.stopPropagation();
-            const characterId = parseInt(bar.dataset.characterId);
+            const characterId = parseInt(bar.dataset.characterId, 10);
             const type = bar.dataset.type;
-            showInputModal(characterId, type);
+            const formKey = bar.dataset.form || getActiveFormKey(character);
+            showInputModal(characterId, type, formKey);
         });
     });
-    
-    // Add click listener to avatar
-    const avatar = card.querySelector('.character-avatar');
-    avatar.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const characterId = parseInt(avatar.dataset.characterId);
-        showAvatarModal(characterId);
+
+    card.querySelectorAll('.character-avatar').forEach((avatar) => {
+        avatar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const characterId = parseInt(avatar.dataset.characterId, 10);
+            const formKey = avatar.dataset.form || getActiveFormKey(character);
+            showAvatarModal(characterId, formKey);
+        });
     });
-    
+}
+
+function toggleCharacterForm(characterId) {
+    const character = characters.find((c) => c.id === characterId);
+    if (!character || !hasAlternateForm(character)) return;
+
+    character.activeForm = getActiveFormKey(character) === ACTIVE_FORM_PRIMARY
+        ? ACTIVE_FORM_ALTERNATE
+        : ACTIVE_FORM_PRIMARY;
+    saveCharacters();
+    renderCharacters();
+}
+
+function showAlternateFormPreview(button, character) {
+    const preview = button.parentElement?.querySelector('.alternate-form-preview');
+    if (!preview) return;
+    const previewFormKey = getActiveFormKey(character) === ACTIVE_FORM_PRIMARY
+        ? ACTIVE_FORM_ALTERNATE
+        : ACTIVE_FORM_PRIMARY;
+    preview.innerHTML = buildAlternateFormPreviewHTML(character, previewFormKey);
+    preview.hidden = false;
+}
+
+function hideAlternateFormPreview(button) {
+    const preview = button.parentElement?.querySelector('.alternate-form-preview');
+    if (preview) {
+        preview.hidden = true;
+    }
+}
+
+// Create a character card element
+function createCharacterCard(character, isCurrentTurn = false) {
+    const card = document.createElement('div');
+    const activeFormKey = getActiveFormKey(character);
+    const activeState = getFormState(character, activeFormKey);
+
+    ensureFormResources(character, ACTIVE_FORM_PRIMARY);
+    if (hasAlternateForm(character)) {
+        ensureFormResources(character, ACTIVE_FORM_ALTERNATE);
+    }
+
+    const isPertoDaMorte = activeState.pontosVida <= activeState.resistencia;
+    const characterType = character.type || 'player';
+    let cardClasses = 'character-card';
+
+    if (characterType === 'enemy') {
+        cardClasses += ' character-enemy';
+    } else if (characterType === 'friendly') {
+        cardClasses += ' character-friendly';
+    } else if (characterType === 'neutral') {
+        cardClasses += ' character-neutral';
+    }
+
+    if (isPertoDaMorte) {
+        cardClasses += ' perto-da-morte';
+    }
+
+    if (isCurrentTurn) {
+        cardClasses += ' current-turn';
+    }
+
+    if (hasAlternateForm(character)) {
+        cardClasses += ' has-alternate-form';
+    }
+
+    card.className = cardClasses;
+    card.dataset.characterId = String(character.id);
+
+    if (!hasAlternateForm(character)) {
+        card.innerHTML = buildCharacterFaceHTML(character, ACTIVE_FORM_PRIMARY, isCurrentTurn);
+        attachCharacterFaceListeners(card, character);
+        return card;
+    }
+
+    const previewFormKey = activeFormKey === ACTIVE_FORM_PRIMARY
+        ? ACTIVE_FORM_ALTERNATE
+        : ACTIVE_FORM_PRIMARY;
+    const flipTargetName = getFormDisplayName(character, previewFormKey);
+    const isFlipped = activeFormKey === ACTIVE_FORM_ALTERNATE;
+
+    card.innerHTML = `
+        <div class="character-card-toolbar">
+            <button type="button"
+                    class="form-flip-btn"
+                    title="Virar para ${flipTargetName}"
+                    aria-label="Virar ficha para ${flipTargetName}">
+                <span class="form-flip-icon" aria-hidden="true">⇄</span>
+                <span class="form-flip-label">${flipTargetName}</span>
+            </button>
+            <div class="alternate-form-preview" hidden role="tooltip"></div>
+        </div>
+        <div class="card-flip-scene">
+            <div class="card-flip-inner${isFlipped ? ' is-flipped' : ''}">
+                <div class="card-face card-face--front">
+                    ${buildCharacterFaceHTML(character, ACTIVE_FORM_PRIMARY, isCurrentTurn)}
+                </div>
+                <div class="card-face card-face--back">
+                    ${buildCharacterFaceHTML(character, ACTIVE_FORM_ALTERNATE, isCurrentTurn)}
+                </div>
+            </div>
+        </div>
+    `;
+
+    const flipBtn = card.querySelector('.form-flip-btn');
+    flipBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        toggleCharacterForm(character.id);
+    });
+    flipBtn.addEventListener('mouseenter', () => showAlternateFormPreview(flipBtn, character));
+    flipBtn.addEventListener('mouseleave', () => hideAlternateFormPreview(flipBtn));
+    flipBtn.addEventListener('focus', () => showAlternateFormPreview(flipBtn, character));
+    flipBtn.addEventListener('blur', () => hideAlternateFormPreview(flipBtn));
+
+    attachCharacterFaceListeners(card, character);
     return card;
 }
 
@@ -761,23 +995,25 @@ function buildInventorySlotsHTML(character) {
     return groups.join('');
 }
 
-function adjustInventoryItem(characterId, rarity, delta) {
+function adjustInventoryItem(characterId, rarity, delta, formKey) {
     const character = characters.find(c => c.id === characterId);
     if (!character || !INVENTORY_RARITIES.includes(rarity)) return;
 
-    ensureCharacterInventory(character);
-    const capacity = character.inventarioCapacidade?.[rarity] ?? 0;
+    const activeFormKey = formKey || getActiveFormKey(character);
+    const formState = getFormState(character, activeFormKey);
+    ensureCharacterInventory(formState);
+    const capacity = formState.inventarioCapacidade?.[rarity] ?? 0;
     if (capacity <= 0) return;
 
-    const before = character.inventario?.[rarity] ?? 0;
+    const before = formState.inventario?.[rarity] ?? 0;
     const after = clampNumber(before + delta, 0, capacity);
     if (before === after) return;
 
-    character.inventario[rarity] = after;
+    formState.inventario[rarity] = after;
     addResourceHistoryEntry({
         timestamp: Date.now(),
         characterId: character.id,
-        characterName: character.name,
+        characterName: getFormDisplayName(character, activeFormKey),
         type: `inventario-${rarity}`,
         delta: after - before,
         before,
@@ -924,9 +1160,12 @@ function setupBattlefieldDragAndDrop() {
 }
 
 // Modal Management
-function showInputModal(characterId, type) {
+function showInputModal(characterId, type, formKey) {
     const character = characters.find(c => c.id === characterId);
     if (!character) return;
+
+    const activeFormKey = formKey || getActiveFormKey(character);
+    const formName = getFormDisplayName(character, activeFormKey);
     
     const typeNames = {
         vida: 'Pontos de Vida',
@@ -937,15 +1176,16 @@ function showInputModal(characterId, type) {
     // Create modal overlay
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay active';
+    overlay.dataset.formKey = activeFormKey;
     
     overlay.innerHTML = `
         <div class="modal">
             <div class="modal-title">Modificar ${typeNames[type]}</div>
-            <div class="modal-hint">Digite +número para adicionar, -número para subtrair, ou apenas um número para definir o valor absoluto (ex: +10, -5, 50)</div>
+            <div class="modal-hint">${formName} — digite +número para adicionar, -número para subtrair, ou apenas um número para definir o valor absoluto (ex: +10, -5, 50)</div>
             <input type="text" class="modal-input" id="value-input" placeholder="+10, -5 ou 50" autofocus>
             <div class="modal-buttons">
                 <button class="modal-button" onclick="closeModal()">Cancelar</button>
-                <button class="modal-button primary" onclick="applyValue(${characterId}, '${type}')">Aplicar</button>
+                <button class="modal-button primary" onclick="applyValue(${characterId}, '${type}', '${activeFormKey}')">Aplicar</button>
             </div>
         </div>
     `;
@@ -957,7 +1197,7 @@ function showInputModal(characterId, type) {
     input.focus();
     input.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            applyValue(characterId, type);
+            applyValue(characterId, type, activeFormKey);
         }
     });
     
@@ -1033,7 +1273,7 @@ function convertImageFileToDataUrl(file) {
     });
 }
 
-function applyValue(characterId, type) {
+function applyValue(characterId, type, formKey) {
     const input = document.getElementById('value-input');
     const valueStr = input.value.trim();
     
@@ -1048,6 +1288,9 @@ function applyValue(characterId, type) {
     
     const character = characters.find(c => c.id === characterId);
     if (!character) return;
+
+    const activeFormKey = formKey || getActiveFormKey(character);
+    const formState = getFormState(character, activeFormKey);
     
     // Determine which property to update
     const propertyMap = {
@@ -1058,11 +1301,11 @@ function applyValue(characterId, type) {
     
     const property = propertyMap[type];
     const maxValue = type === 'vida'
-        ? getMaxVida(character)
-        : (type === 'mana' ? getMaxMana(character) : getMaxAcao(character));
+        ? getMaxVidaForState(formState, character)
+        : (type === 'mana' ? getMaxManaForState(formState, character) : getMaxAcaoForState(formState));
     
     // Store old value to detect healing/damage
-    const oldValue = character[property];
+    const oldValue = formState[property];
     let operator = null;
     
     // Apply operation
@@ -1072,41 +1315,41 @@ function applyValue(characterId, type) {
         const value = parseInt(relativeMatch[2]);
         
         if (operator === '+') {
-            character[property] = Math.min(character[property] + value, maxValue);
+            formState[property] = Math.min(formState[property] + value, maxValue);
         } else {
-            character[property] = Math.max(character[property] - value, 0);
+            formState[property] = Math.max(formState[property] - value, 0);
         }
     } else if (absoluteMatch) {
         // Absolute value: just x
         const value = parseInt(absoluteMatch[1]);
-        character[property] = Math.max(0, Math.min(value, maxValue));
+        formState[property] = Math.max(0, Math.min(value, maxValue));
         // Determine operator based on value change for animation purposes
-        if (character[property] > oldValue) {
+        if (formState[property] > oldValue) {
             operator = '+';
-        } else if (character[property] < oldValue) {
+        } else if (formState[property] < oldValue) {
             operator = '-';
         }
     }
 
-    if (character[property] !== oldValue) {
+    if (formState[property] !== oldValue) {
         addResourceHistoryEntry({
             timestamp: Date.now(),
             characterId: character.id,
-            characterName: character.name,
+            characterName: getFormDisplayName(character, activeFormKey),
             type,
-            delta: character[property] - oldValue,
+            delta: formState[property] - oldValue,
             before: oldValue,
-            after: character[property]
+            after: formState[property]
         });
     }
     
     // Check for different animation types
-    const wasHealed = type === 'vida' && character[property] > oldValue;
-    const healthLost = type === 'vida' && character[property] < oldValue;
-    const manaSpent = type === 'mana' && character[property] < oldValue;
-    const manaRecovered = type === 'mana' && character[property] > oldValue;
-    const actionSpent = type === 'acao' && character[property] < oldValue;
-    const actionRecovered = type === 'acao' && character[property] > oldValue;
+    const wasHealed = type === 'vida' && formState[property] > oldValue;
+    const healthLost = type === 'vida' && formState[property] < oldValue;
+    const manaSpent = type === 'mana' && formState[property] < oldValue;
+    const manaRecovered = type === 'mana' && formState[property] > oldValue;
+    const actionSpent = type === 'acao' && formState[property] < oldValue;
+    const actionRecovered = type === 'acao' && formState[property] > oldValue;
     
     // Save and re-render
     saveCharacters();
@@ -1114,7 +1357,7 @@ function applyValue(characterId, type) {
     
     // Trigger appropriate animations
     setTimeout(() => {
-        const bar = document.querySelector(`.status-bar[data-character-id="${characterId}"][data-type="${type}"]`);
+        const bar = document.querySelector(`.status-bar[data-character-id="${characterId}"][data-form="${activeFormKey}"][data-type="${type}"]`);
         if (!bar) return;
         
         if (wasHealed) {
@@ -1151,19 +1394,23 @@ function deleteCharacter(characterId) {
 }
 
 // Show avatar change modal
-function showAvatarModal(characterId) {
+function showAvatarModal(characterId, formKey) {
     const character = characters.find(c => c.id === characterId);
     if (!character) return;
+
+    const activeFormKey = formKey || getActiveFormKey(character);
+    const formState = getFormState(character, activeFormKey);
     
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay active';
+    overlay.dataset.formKey = activeFormKey;
     
     overlay.innerHTML = `
         <div class="modal" style="max-width: 500px;">
-            <div class="modal-title">Alterar Avatar de ${character.name}</div>
+            <div class="modal-title">Alterar Avatar de ${formState.name}</div>
             <div class="form-group">
                 <label>URL da Imagem</label>
-                <input type="text" class="modal-input" id="avatar-url" placeholder="https://..." value="${character.avatar || ''}">
+                <input type="text" class="modal-input" id="avatar-url" placeholder="https://..." value="${formState.avatar || ''}">
             </div>
             <div style="text-align: center; margin: 15px 0; color: var(--text-secondary);">ou</div>
             <div class="form-group">
@@ -1213,14 +1460,18 @@ function showAvatarModal(characterId) {
 function updateAvatar(characterId) {
     const urlInput = document.getElementById('avatar-url');
     const avatarValue = urlInput.value.trim();
+    const overlay = document.querySelector('.modal-overlay');
+    const formKey = overlay?.dataset.formKey || ACTIVE_FORM_PRIMARY;
     
     const character = characters.find(c => c.id === characterId);
     if (!character) return;
+
+    const formState = getFormState(character, formKey);
     
     if (avatarValue) {
-        character.avatar = avatarValue;
+        formState.avatar = avatarValue;
     } else {
-        character.avatar = DEFAULT_AVATAR;
+        formState.avatar = DEFAULT_AVATAR;
     }
     
     saveCharacters();
@@ -1232,8 +1483,12 @@ function updateAvatar(characterId) {
 function removeAvatar(characterId) {
     const character = characters.find(c => c.id === characterId);
     if (!character) return;
+
+    const overlay = document.querySelector('.modal-overlay');
+    const formKey = overlay?.dataset.formKey || ACTIVE_FORM_PRIMARY;
+    const formState = getFormState(character, formKey);
     
-    character.avatar = DEFAULT_AVATAR;
+    formState.avatar = DEFAULT_AVATAR;
     saveCharacters();
     renderCharacters();
     closeModal();
@@ -1446,15 +1701,104 @@ function addCharacter() {
     }
 }
 
+function setupAlternateFormEditor(overlay) {
+    const toggle = overlay.querySelector('#edit-char-has-alternate');
+    const fields = overlay.querySelector('#edit-alternate-form-fields');
+    const inheritCheckbox = overlay.querySelector('#edit-alt-inherit-habilidade');
+    const habilidadeInput = overlay.querySelector('#edit-alt-habilidade');
+
+    const syncAlternateVisibility = () => {
+        if (!fields || !toggle) return;
+        fields.hidden = !toggle.checked;
+    };
+
+    const syncHabilidadeField = () => {
+        if (!habilidadeInput || !inheritCheckbox) return;
+        const inherited = inheritCheckbox.checked;
+        habilidadeInput.disabled = inherited;
+        habilidadeInput.title = inherited ? 'Usa a Habilidade do personagem principal' : '';
+    };
+
+    if (toggle) {
+        toggle.addEventListener('change', syncAlternateVisibility);
+        syncAlternateVisibility();
+    }
+    if (inheritCheckbox) {
+        inheritCheckbox.addEventListener('change', syncHabilidadeField);
+        syncHabilidadeField();
+    }
+}
+
+function applyStatsToFormState(formState, parentCharacter, stats) {
+    const {
+        poder,
+        habilidade,
+        resistencia,
+        vantagemVida,
+        vantagemMana,
+        vantagemAcao,
+        inheritHabilidade
+    } = stats;
+
+    if (inheritHabilidade !== undefined) {
+        formState.inheritHabilidade = inheritHabilidade;
+    }
+    if (habilidade !== undefined && !formState.inheritHabilidade) {
+        formState.habilidade = habilidade;
+    }
+
+    const oldMaxVida = getMaxVidaForState(formState, parentCharacter);
+    const oldMaxMana = getMaxManaForState(formState, parentCharacter);
+    const oldMaxAcao = getMaxAcaoForState(formState);
+
+    const effectiveHabilidade = formState.inheritHabilidade
+        ? parentCharacter.habilidade
+        : (habilidade ?? formState.habilidade ?? parentCharacter.habilidade);
+    const newMaxVida = resistencia * 5 + vantagemVida * RESOURCE_BONUS.vida;
+    const newMaxMana = effectiveHabilidade * 5 + vantagemMana * RESOURCE_BONUS.mana;
+    const newMaxAcao = poder + vantagemAcao * RESOURCE_BONUS.acao;
+
+    const wasFullVida = formState.pontosVida >= oldMaxVida;
+    const wasFullMana = formState.pontosMana >= oldMaxMana;
+    const wasFullAcao = formState.pontosAcao >= oldMaxAcao;
+
+    formState.poder = poder;
+    formState.resistencia = resistencia;
+    formState.vantagemVida = vantagemVida;
+    formState.vantagemMana = vantagemMana;
+    formState.vantagemAcao = vantagemAcao;
+
+    if (formState.pontosVida === undefined || formState.pontosVida === null || wasFullVida) {
+        formState.pontosVida = newMaxVida;
+    } else {
+        formState.pontosVida = Math.max(0, Math.min(formState.pontosVida, newMaxVida));
+    }
+
+    if (formState.pontosMana === undefined || formState.pontosMana === null || wasFullMana) {
+        formState.pontosMana = newMaxMana;
+    } else {
+        formState.pontosMana = Math.max(0, Math.min(formState.pontosMana, newMaxMana));
+    }
+
+    if (formState.pontosAcao === undefined || formState.pontosAcao === null || wasFullAcao) {
+        formState.pontosAcao = newMaxAcao;
+    } else {
+        formState.pontosAcao = Math.max(0, Math.min(formState.pontosAcao, newMaxAcao));
+    }
+}
+
 function showEditCharacterModal(characterId) {
     const character = characters.find(c => c.id === characterId);
     if (!character) return;
+
+    const alt = character.alternateForm || {};
+    const hasAlt = hasAlternateForm(character);
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay active';
 
     overlay.innerHTML = `
-        <div class="modal" style="max-width: 500px;">
+        <div class="modal edit-character-modal" style="max-width: 560px;">
             <div class="modal-title">Editar Personagem</div>
             <div class="form-group">
                 <label>Nome do Personagem</label>
@@ -1521,7 +1865,75 @@ function showEditCharacterModal(characterId) {
                     </div>
                 </div>
             </div>
-            <div class="modal-hint">Dica: para alterar o avatar, dê duplo clique na foto.</div>
+            <div class="form-group alternate-form-toggle">
+                <label class="alternate-form-toggle-label">
+                    <input type="checkbox" id="edit-char-has-alternate" ${hasAlt ? 'checked' : ''}>
+                    <span>Forma alternativa (Transformação / Mecha)</span>
+                </label>
+            </div>
+            <div id="edit-alternate-form-fields" class="alternate-form-fields" ${hasAlt ? '' : 'hidden'}>
+                <div class="alternate-form-heading">Ficha alternativa (verso do card)</div>
+                <div class="form-group">
+                    <label>Nome da forma alternativa</label>
+                    <input type="text" class="modal-input" id="edit-alt-name" placeholder="Mecha, forma transformada..." value="${alt.name || ''}">
+                </div>
+                <div class="form-group">
+                    <label class="alternate-form-toggle-label">
+                        <input type="checkbox" id="edit-alt-inherit-habilidade" ${alt.inheritHabilidade ? 'checked' : ''}>
+                        <span>Herdar Habilidade do personagem principal (mecha / BLE)</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="edit-alt-hidden-values" style="width: auto; cursor: pointer;" ${alt.hiddenValues ? 'checked' : ''}>
+                        <span>Ocultar valores da forma alternativa</span>
+                    </label>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Poder</label>
+                        <input type="number" class="modal-input" id="edit-alt-poder" min="1" value="${alt.poder || 1}">
+                    </div>
+                    <div class="form-group">
+                        <label>Habilidade</label>
+                        <input type="number" class="modal-input" id="edit-alt-habilidade" min="1" value="${alt.habilidade || character.habilidade || 1}">
+                    </div>
+                    <div class="form-group">
+                        <label>Resistência</label>
+                        <input type="number" class="modal-input" id="edit-alt-resistencia" min="1" value="${alt.resistencia || 1}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Vantagens da forma alternativa</label>
+                    <div class="advantage-row">
+                        <div class="advantage-stepper" data-target="edit-alt-vantagem-vida">
+                            <span class="advantage-label">+Vida</span>
+                            <div class="advantage-controls">
+                                <button type="button" class="advantage-btn" data-action="dec">-</button>
+                                <input type="number" class="advantage-value" id="edit-alt-vantagem-vida" min="0" value="${alt.vantagemVida || 0}" readonly>
+                                <button type="button" class="advantage-btn" data-action="inc">+</button>
+                            </div>
+                        </div>
+                        <div class="advantage-stepper" data-target="edit-alt-vantagem-mana">
+                            <span class="advantage-label">+Mana</span>
+                            <div class="advantage-controls">
+                                <button type="button" class="advantage-btn" data-action="dec">-</button>
+                                <input type="number" class="advantage-value" id="edit-alt-vantagem-mana" min="0" value="${alt.vantagemMana || 0}" readonly>
+                                <button type="button" class="advantage-btn" data-action="inc">+</button>
+                            </div>
+                        </div>
+                        <div class="advantage-stepper" data-target="edit-alt-vantagem-acao">
+                            <span class="advantage-label">+Ação</span>
+                            <div class="advantage-controls">
+                                <button type="button" class="advantage-btn" data-action="dec">-</button>
+                                <input type="number" class="advantage-value" id="edit-alt-vantagem-acao" min="0" value="${alt.vantagemAcao || 0}" readonly>
+                                <button type="button" class="advantage-btn" data-action="inc">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-hint">Dica: para alterar o avatar, dê duplo clique na foto. Use o botão ⇄ no card para virar entre as fichas.</div>
             <div class="modal-buttons">
                 <button class="modal-button" onclick="closeModal()">Cancelar</button>
                 <button class="modal-button primary" id="save-character">Salvar</button>
@@ -1537,6 +1949,7 @@ function showEditCharacterModal(characterId) {
     });
 
     setupAdvantageSteppers(overlay);
+    setupAlternateFormEditor(overlay);
 
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
@@ -1564,44 +1977,67 @@ function updateCharacter(characterId) {
         return;
     }
 
-    const oldMaxVida = getMaxVida(character);
-    const oldMaxMana = getMaxMana(character);
-    const oldMaxAcao = getMaxAcao(character);
-
-    const newMaxVida = resistencia * 5 + vantagemVida * RESOURCE_BONUS.vida;
-    const newMaxMana = habilidade * 5 + vantagemMana * RESOURCE_BONUS.mana;
-    const newMaxAcao = poder + vantagemAcao * RESOURCE_BONUS.acao;
-
-    const wasFullVida = character.pontosVida >= oldMaxVida;
-    const wasFullMana = character.pontosMana >= oldMaxMana;
-    const wasFullAcao = character.pontosAcao >= oldMaxAcao;
-
     character.name = name;
     character.type = type;
     character.hiddenValues = hiddenValues;
-    character.poder = poder;
-    character.habilidade = habilidade;
-    character.resistencia = resistencia;
-    character.vantagemVida = vantagemVida;
-    character.vantagemMana = vantagemMana;
-    character.vantagemAcao = vantagemAcao;
+    applyStatsToFormState(character, character, {
+        poder,
+        habilidade,
+        resistencia,
+        vantagemVida,
+        vantagemMana,
+        vantagemAcao
+    });
 
-    if (character.pontosVida === undefined || character.pontosVida === null || wasFullVida) {
-        character.pontosVida = newMaxVida;
-    } else {
-        character.pontosVida = Math.max(0, Math.min(character.pontosVida, newMaxVida));
-    }
+    const hasAlternateEnabled = document.getElementById('edit-char-has-alternate')?.checked;
+    if (hasAlternateEnabled) {
+        const altName = document.getElementById('edit-alt-name')?.value.trim();
+        if (!altName) {
+            alert('Informe o nome da forma alternativa ou desmarque a opção.');
+            return;
+        }
 
-    if (character.pontosMana === undefined || character.pontosMana === null || wasFullMana) {
-        character.pontosMana = newMaxMana;
-    } else {
-        character.pontosMana = Math.max(0, Math.min(character.pontosMana, newMaxMana));
-    }
+        const inheritHabilidade = document.getElementById('edit-alt-inherit-habilidade')?.checked;
+        const altHiddenValues = document.getElementById('edit-alt-hidden-values')?.checked;
+        const altPoder = parseInt(document.getElementById('edit-alt-poder')?.value, 10) || 1;
+        const altHabilidade = parseInt(document.getElementById('edit-alt-habilidade')?.value, 10) || habilidade;
+        const altResistencia = parseInt(document.getElementById('edit-alt-resistencia')?.value, 10) || 1;
+        const altVantagemVida = clampNumber(toFiniteInt(document.getElementById('edit-alt-vantagem-vida')?.value, 0), 0, 99);
+        const altVantagemMana = clampNumber(toFiniteInt(document.getElementById('edit-alt-vantagem-mana')?.value, 0), 0, 99);
+        const altVantagemAcao = clampNumber(toFiniteInt(document.getElementById('edit-alt-vantagem-acao')?.value, 0), 0, 99);
 
-    if (character.pontosAcao === undefined || character.pontosAcao === null || wasFullAcao) {
-        character.pontosAcao = newMaxAcao;
+        const previousAlternate = character.alternateForm || {};
+        const alternateDraft = {
+            ...previousAlternate,
+            name: altName,
+            inheritHabilidade,
+            hiddenValues: altHiddenValues,
+            poder: altPoder,
+            habilidade: inheritHabilidade ? null : altHabilidade,
+            resistencia: altResistencia,
+            vantagemVida: altVantagemVida,
+            vantagemMana: altVantagemMana,
+            vantagemAcao: altVantagemAcao
+        };
+
+        character.alternateForm = normalizeAlternateForm(alternateDraft, character);
+        if (!character.alternateForm) {
+            alert('Não foi possível salvar a forma alternativa.');
+            return;
+        }
+
+        applyStatsToFormState(character.alternateForm, character, {
+            poder: altPoder,
+            habilidade: inheritHabilidade ? character.habilidade : altHabilidade,
+            resistencia: altResistencia,
+            vantagemVida: altVantagemVida,
+            vantagemMana: altVantagemMana,
+            vantagemAcao: altVantagemAcao,
+            inheritHabilidade
+        });
     } else {
-        character.pontosAcao = Math.max(0, Math.min(character.pontosAcao, newMaxAcao));
+        delete character.alternateForm;
+        character.activeForm = ACTIVE_FORM_PRIMARY;
     }
 
     saveCharacters();
@@ -1609,11 +2045,13 @@ function updateCharacter(characterId) {
     closeModal();
 }
 
-function showStatusModal(characterId) {
+function showStatusModal(characterId, formKey) {
     const character = characters.find(c => c.id === characterId);
     if (!character) return;
 
-    const currentStatuses = new Set(normalizeStatusList(character.statuses));
+    const activeFormKey = formKey || getActiveFormKey(character);
+    const formState = getFormState(character, activeFormKey);
+    const currentStatuses = new Set(normalizeStatusList(formState.statuses));
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay active';
 
@@ -1627,10 +2065,12 @@ function showStatusModal(characterId) {
         </label>
     `).join('');
 
+    overlay.dataset.formKey = activeFormKey;
+
     overlay.innerHTML = `
         <div class="modal status-modal">
-            <div class="modal-title">Status de ${character.name}</div>
-            <div class="modal-hint">Marque os efeitos ativos para este personagem.</div>
+            <div class="modal-title">Status de ${formState.name}</div>
+            <div class="modal-hint">Marque os efeitos ativos para esta ficha.</div>
             <div class="status-options">
                 ${optionsHtml}
             </div>
@@ -1646,7 +2086,7 @@ function showStatusModal(characterId) {
     const saveBtn = overlay.querySelector('#save-statuses');
     saveBtn.addEventListener('click', () => {
         const selected = Array.from(overlay.querySelectorAll('input[name="status-option"]:checked')).map((input) => input.value);
-        character.statuses = normalizeStatusList(selected);
+        formState.statuses = normalizeStatusList(selected);
         saveCharacters();
         renderCharacters();
         closeModal();
@@ -1659,16 +2099,19 @@ function showStatusModal(characterId) {
     });
 }
 
-function showInventoryModal(characterId) {
+function showInventoryModal(characterId, formKey) {
     const character = characters.find(c => c.id === characterId);
     if (!character) return;
 
-    ensureCharacterInventory(character);
+    const activeFormKey = formKey || getActiveFormKey(character);
+    const formState = getFormState(character, activeFormKey);
+    ensureCharacterInventory(formState);
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay active';
+    overlay.dataset.formKey = activeFormKey;
 
-    const currentTier = normalizeInventoryTier(character.inventarioNivel);
+    const currentTier = normalizeInventoryTier(formState.inventarioNivel);
     const optionsHtml = INVENTORY_TIER_PRESETS.map((preset) => `
         <button type="button"
                 class="inventory-tier-button ${preset.level === currentTier ? 'selected' : ''}"
@@ -1684,7 +2127,7 @@ function showInventoryModal(characterId) {
 
     overlay.innerHTML = `
         <div class="modal inventory-modal">
-            <div class="modal-title">Inventário de ${character.name}</div>
+            <div class="modal-title">Inventário de ${formState.name}</div>
             <div class="modal-hint">Selecione o tier do Inventário.</div>
             <div class="inventory-tier-options">
                 ${optionsHtml}
@@ -1738,13 +2181,16 @@ function saveInventoryTierFromModal(characterId, overlay) {
     const character = characters.find(c => c.id === characterId);
     if (!character) return;
 
+    const formKey = overlay.dataset.formKey || getActiveFormKey(character);
+    const formState = getFormState(character, formKey);
+
     const selected = overlay.querySelector('.inventory-tier-button.selected');
     const tier = normalizeInventoryTier(selected ? selected.dataset.tier : 0);
     const capacity = getInventoryCapacityForTier(tier);
 
-    character.inventarioNivel = tier;
-    character.inventarioCapacidade = capacity;
-    character.inventario = { ...capacity };
+    formState.inventarioNivel = tier;
+    formState.inventarioCapacidade = capacity;
+    formState.inventario = { ...capacity };
 
     saveCharacters();
     renderCharacters();
@@ -2109,10 +2555,10 @@ function getMergeSummary(incoming) {
 
 function applyImportData(incoming, mode) {
     if (mode === 'replace') {
-        characters = incoming.map(stripImportMeta);
+        characters = incoming.map((item) => normalizeCharacterData(stripImportMeta(item)));
     } else {
         const merged = mergeCharacters(incoming);
-        characters = merged.map(stripImportMeta);
+        characters = merged.map((item) => normalizeCharacterData(stripImportMeta(item)));
     }
     ensureBattlefieldPositions();
     saveCharacters();
@@ -2624,17 +3070,19 @@ function updateDiceAttributeValue() {
     
     const character = characters.find(c => c.id === parseInt(characterId));
     if (!character) return;
+
+    const formState = getFormState(character);
     
     const attributeBtn = document.getElementById('dice-attribute-btn');
     const selectedAttribute = attributeBtn?.dataset.attribute || 'poder';
     
     let value = 0;
     if (selectedAttribute === 'poder') {
-        value = character.poder || 0;
+        value = formState.poder || 0;
     } else if (selectedAttribute === 'habilidade') {
-        value = character.habilidade || 0;
+        value = getEffectiveHabilidade(character, formState) || 0;
     } else if (selectedAttribute === 'resistencia') {
-        value = character.resistencia || 0;
+        value = formState.resistencia || 0;
     }
     
     const attributeValueInput = document.getElementById('dice-attribute-value');
@@ -2785,6 +3233,8 @@ window.showDiceModal = showDiceModal;
 window.rollDice = rollDice;
 window.updateDiceCharacterStats = updateDiceCharacterStats;
 window.updateDiceAttributeValue = updateDiceAttributeValue;
+window.toggleCharacterForm = toggleCharacterForm;
+window.showInventoryModal = showInventoryModal;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
